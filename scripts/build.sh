@@ -33,7 +33,7 @@ if [ -n "${DOCKER_REGISTRY_PASSWORD}" ]; then
   docker login --username="$DOCKER_REGISTRY_USERNAME" --password="$DOCKER_REGISTRY_PASSWORD"
 fi
 
-docker tag "$IMAGE_TAG_WITH_SHA" "${REGISTRY}/${IMAGE_TAG_WITH_SHA}"
+docker tag "$IMAGE_TAG_WITH_SHA" "${IMAGE_TAG_WITH_SHA}"
 
 docker push "${IMAGE_TAG_WITH_SHA}"
 echo "${IMAGE_TAG_WITH_SHA} pushed to remote."
