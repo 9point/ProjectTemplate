@@ -1,4 +1,7 @@
 IMAGE_NAME=brenmcnamara/test-project
 
-build:
-	IMAGE_NAME=${IMAGE_NAME} bash scripts/build.sh
+protoc:
+	bash scripts/protoc.sh
+
+build_docker:
+	IMAGE_NAME=${IMAGE_NAME} bash scripts/build_docker.sh
