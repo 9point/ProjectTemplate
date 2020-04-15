@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ name }}
+spec:
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      containers:
+        - name: {{ name }}
+          image: {{ image-name }}
+          command: ["python", "./main.py", "run", "{{ workflow-name }}"]
+      restartPolicy: Never
+  backoffLimit: 4

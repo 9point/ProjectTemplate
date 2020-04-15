@@ -1,7 +1,7 @@
 import argparse
 import grpc
 
-from static_codegen import helloworld_pb2_grpc, helloworld_pb2
+from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from tasks.test import test_task
 from utils.task_mgr import InvalidTaskName, register_tasks, run_task
 
@@ -27,12 +27,13 @@ def register(commands):
 
 if __name__ == '__main__':
 
-    print('Connecting to grpc...')
-    with grpc.insecure_channel('localhost:50051') as channel:
-        print('Made insecure connection...')
-        stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-        print(response.message)
+    # print('Connecting to grpc...')
+    # channel = grpc.insecure_channel('localhost:50051')
+    # stub = mlservice_pb2_grpc.MLServiceStub(channel)
+
+    # request = mlservice_pb2.Req_MLProjects()
+    # for response in stub.GetProjects(request):
+    #     print(response)
 
     register_tasks([test_task])
 
