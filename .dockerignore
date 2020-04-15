@@ -1,5 +1,3 @@
 .DS_Store
-Makefile
 
-proto/
 static_codegen/
