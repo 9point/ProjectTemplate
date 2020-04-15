@@ -22,7 +22,7 @@ def test_task():
     w2 = torch.randn(H, D_out, device=device, dtype=dtype)
 
     learning_rate = 1e-6
-    for t in range(10000):
+    for t in range(100000):
         # Forward pass: compute predicted y
         h = x.mm(w1)
         h_relu = h.clamp(min=0)
