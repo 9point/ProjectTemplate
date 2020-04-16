@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: torchtest
+spec:
+  selector:
+    rank: master
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pingerabc3
+  labels:
+    rank: master
+spec:
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      containers:
+        - name: test-project
+          image: brenmcnamara/test-project
+          command: ["python", "./main.py", "run", "mnist"]
+          # command: ["bash", "wait_then_ping.sh"]
+          # command: ["sleep", "3600"]
+          env:
+            - name: RANK
+              value: "0"
+            - name: WORLD_SIZE
+              value: "2"
+            - name: MASTER_ADDR
+              value: "torchtest"
+            - name: MASTER_PORT
+              value: "80"
+      restartPolicy: Never
+  backoffLimit: 4
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pingerabc4
+  labels:
+    rank: worker
+spec:
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      containers:
+        - name: test-project
+          image: brenmcnamara/test-project
+          command: ["python", "./main.py", "run", "mnist"]
+          # command: ["bash", "wait_then_ping.sh"]
+          # command: ["sleep", "3600"]
+          env:
+            - name: RANK
+              value: "1"
+            - name: WORLD_SIZE
+              value: "2"
+            - name: MASTER_ADDR
+              value: "torchtest"
+            - name: MASTER_PORT
+              value: "80"
+      restartPolicy: Never
+  backoffLimit: 4

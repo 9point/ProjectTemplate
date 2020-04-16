@@ -1,4 +1,7 @@
 boto3
 numpy
 pandas
+grpcio-tools
+tensorboardX 
 torch
+torchvision

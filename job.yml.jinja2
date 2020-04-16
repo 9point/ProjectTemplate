@@ -1,3 +1,8 @@
+{%- for j in job_configs %}
+{%- set name = j["name"] %}
+{%- set image-name = j["image-name"] %}
+{%- set workflow-name = j["workflow-name"] %}
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,3 +17,4 @@ spec:
           command: ["python", "./main.py", "run", "{{ workflow-name }}"]
       restartPolicy: Never
   backoffLimit: 4
+{%- endfor %}

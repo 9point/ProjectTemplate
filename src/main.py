@@ -1,8 +1,6 @@
 import argparse
-import grpc
 
-from static_codegen import mlservice_pb2, mlservice_pb2_grpc
-from tasks.test import test_task
+from tasks.mnist_task import mnist
 from utils.task_mgr import InvalidTaskName, register_tasks, run_task
 
 
@@ -26,16 +24,7 @@ def register(commands):
 
 
 if __name__ == '__main__':
-
-    # print('Connecting to grpc...')
-    # channel = grpc.insecure_channel('localhost:50051')
-    # stub = mlservice_pb2_grpc.MLServiceStub(channel)
-
-    # request = mlservice_pb2.Req_MLProjects()
-    # for response in stub.GetProjects(request):
-    #     print(response)
-
-    register_tasks([test_task])
+    register_tasks([mnist])
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')

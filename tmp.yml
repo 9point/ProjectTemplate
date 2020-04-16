@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sleepandping2
+spec:
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      hostname: dummy
+      subdomain: '0'
+      containers:
+        - name: testproj
+          image: alpine
+          command: ["dig", "-t", "AXFR", "cluster.local", "any"]
+          env:
+            - name: RANK
+              value: '0'
+      restartPolicy: Never
+  backoffLimit: 4
