@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pingerabc4
+  labels:
+    rank: worker
+spec:
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      containers:
+        - name: test-project
+          image: brenmcnamara/test-project
+          command: ["python", "./main.py", "run", "test"]
+      restartPolicy: Never
+  backoffLimit: 4
