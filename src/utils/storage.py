@@ -10,21 +10,26 @@ _SPACES_ENDPOINT_URL = f'https://{_SPACES_REGION}.digitaloceanspaces.com'
 
 _LOCAL_CACHE_DIR = os.environ.get('LOCAL_CACHE_DIR')
 
+
 class S3File():
     def __init__(self, remote_path):
         self.remote_path = remote_path
 
-        self._local_file_handle = None
-        self._is_prepared = False
+    def _local_path(self):
+        return os.path.join(_LOCAL_CACHE_DIR, self.remote_path)
 
-    def sync(self):
+    def _create_client(self):
         session = boto3.session.Session()
         client = session.client('s3',
                                 region_name=_SPACES_REGION,
                                 endpoint_url=_SPACES_ENDPOINT_URL,
                                 aws_access_key_id=_AWS_ACCESS_KEY_ID,
                                 aws_secret_access_key=_AWS_SECRET_ACCESS_KEY)
-        local_path = os.path.join(_LOCAL_CACHE_DIR, self.remote_path)
+        return client
+
+    def _create_local_read_handle(self):
+        client = self._create_client()
+        local_path = self._local_path()
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
         with open(local_path, 'wb') as write_file:
@@ -32,21 +37,39 @@ class S3File():
                 _SPACES_BUCKET, self.remote_path, write_file)
 
         read_file = open(local_path, 'rb')
+        return read_file
 
-        self._local_file_handle = read_file
-        self._is_prepared = True
+    def _create_local_write_handle(self):
+        local_path = self._local_path()
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        return open(local_path, 'wb')
 
     def read(self):
-        assert(self._is_prepared)
-        return self._local_file_handle.read()
+        # TODO: Use context manager.
+        read_handle = self._create_local_read_handle()
+        data = read_handle.read()
+        read_handle.close()
+        return data
 
     def readlines(self):
-        assert(self._is_prepared)
-        return self._local_file_handle.readlines()
+        # TODO: Use context manager.
+        read_handle = self._create_local_read_handle()
+        data = read_handle.readlines()
+        read_handle.close()
+        return data
+
+    def write(self, data):
+        client = self._create_client()
+
+        # TODO: Use context manager.
+        write_handle = self._create_local_write_handle()
+        write_handle.write(data)
+        write_handle.close()
+
+        client.upload_file(self._local_path(),
+                           _SPACES_BUCKET, self.remote_path)
 
 
-# TODO: Add context manager here.
+# TODO: Add context manager.
 def s3_open(path):
-    file = S3File(remote_path=path)
-    file.sync()
-    return file
+    return S3File(remote_path=path)
