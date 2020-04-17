@@ -1,6 +1,6 @@
 import argparse
 
-from tasks.mnist_task import mnist
+from tasks.test import test
 from utils.task_mgr import InvalidTaskName, register_tasks, run_task
 
 
@@ -24,7 +24,7 @@ def register(commands):
 
 
 if __name__ == '__main__':
-    register_tasks([mnist])
+    register_tasks([test])
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')

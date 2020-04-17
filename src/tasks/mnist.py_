@@ -15,7 +15,7 @@ from utils.task_mgr import define_task
 
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
 
-print('IMPORTING MNIST_TASK.py')
+print('IMPORTING MNIST_TASK.py', __name__)
 
 
 class Net(nn.Module):
