@@ -169,8 +169,8 @@ def top_k_labeling_errors(confusion_matrix, category_decoder, k):
     return label_errors
 
 
-@define_task(version="0.0.1")
-def train_bow_classifier():
+@define_task(name="bow_classifier.train_task", version="0.0.1-dev")
+def main():
     print('Loading and setting up the data...')
 
     with s3_read('ml/data/news_classifier/train_data.json') as file:

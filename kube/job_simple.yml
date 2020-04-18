@@ -5,13 +5,17 @@ metadata:
   labels:
     rank: worker
 spec:
-  activeDeadlineSeconds: 3600
   template:
     spec:
       containers:
         - name: test-project
           image: brenmcnamara/test-project
-          command: ["python", "./main.py", "run", "train_bow_classifier"]
+          command: ["python", "./main.py", "run", "bow_classifier.train"]
+          resources:
+            limits:
+              memory: "12Gi"
+            requests:
+              memory: "12Gi"
           env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:

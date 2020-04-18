@@ -1,7 +1,7 @@
 import argparse
 
-from bow_classifier.train import train_bow_classifier
-from utils.task_mgr import InvalidTaskName, register_tasks, run_task
+from bow_classifier import train as train_bow_classifier
+from utils.task_mgr import InvalidWorkflowName, register_workflows, run_workflow
 
 
 def run(commands):
@@ -9,13 +9,13 @@ def run(commands):
         print('Error: Must provide task name to run.')
         exit(1)
 
-    task_name = commands[0]
-    print(f'Running command: "{task_name}"...')
+    workflow_name = commands[0]
+    print(f'Running command: "{workflow_name}"...')
 
     try:
-        run_task(task_name)
-    except InvalidTaskName:
-        print(f'Error: Invalid task name: "{task_name}"')
+        run_workflow(workflow_name)
+    except InvalidWorkflowName:
+        print(f'Error: Invalid workflow name: "{workflow_name}"')
         exit(1)
 
 
@@ -24,7 +24,7 @@ def register(commands):
 
 
 if __name__ == '__main__':
-    register_tasks([train_bow_classifier])
+    register_workflows([train_bow_classifier])
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')
