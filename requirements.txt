@@ -2,6 +2,7 @@ boto3
 numpy
 pandas
 grpcio-tools
+nltk
 tensorboardX 
 torch
 torchvision

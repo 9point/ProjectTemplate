@@ -1,6 +1,6 @@
 import argparse
 
-from tasks.test import test
+from bow_classifier.train import train_bow_classifier
 from utils.task_mgr import InvalidTaskName, register_tasks, run_task
 
 
@@ -24,7 +24,7 @@ def register(commands):
 
 
 if __name__ == '__main__':
-    register_tasks([test])
+    register_tasks([train_bow_classifier])
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')

@@ -4,7 +4,7 @@ BASE_DOCKERFILE=Dockerfile.base
 IMAGE_NAME=brenmcnamara/test-project
 DOCKERFILE=Dockerfile
 
-PROJECT_NAME=test-project
+PROJECT_NAME=news-classifier
 
 protoc:
 	bash scripts/protoc.sh

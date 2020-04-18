@@ -1,14 +1,11 @@
 import torch
 
-from utils.storage import s3_open
 from utils.task_mgr import define_task
 
 
 @define_task(version="0.0.1")
 def test():
     print('Opening file...')
-    file = s3_open('another_file.txt')
-    file.write(b'Hello world!')
 
     epochs = 10000
     dtype = torch.float
