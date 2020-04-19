@@ -17,6 +17,8 @@ spec:
             requests:
               memory: "12Gi"
           env:
+            - name: API_ENDPOINT
+              value: localhost:50051
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -29,6 +31,10 @@ spec:
                   key: AWS_SECRET_ACCESS_KEY
             - name: LOCAL_CACHE_DIR
               value: /tmp/s3-cache
+            - name: PROJECT_NAME
+              value: news-classifier
+            - name: IMAGE_NAME
+              value: brenmcnamara/test-project
             - name: SPACES_BUCKET
               valueFrom:
                 configMapKeyRef:
