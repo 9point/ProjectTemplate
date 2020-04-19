@@ -1,14 +1,9 @@
 import argparse
-import grpc
 import os
 
 from bow_classifier import train as train_bow_classifier
-from static_codegen import mlservice_pb2, mlservice_pb2_grpc
+from utils.api import start_api
 from utils.task_mgr import InvalidWorkflowName, register_workflows, run_workflow
-
-_PROJECT_NAME = os.environ.get('PROJECT_NAME')
-_IMAGE_NAME = os.environ.get('IMAGE_NAME')
-_API_ENDPOINT = os.environ.get('API_ENDPOINT')
 
 
 def run(commands):
@@ -27,7 +22,7 @@ def run(commands):
 
 
 def register(commands):
-    print('Registering Project...')
+    print('Blah')
 
 
 if __name__ == '__main__':
@@ -43,14 +38,10 @@ if __name__ == '__main__':
         print('error: No commands provided.')
         exit(1)
 
-    # Make GRPC Connection.
-    print(f'Registering project: {_PROJECT_NAME}')
-    channel = grpc.insecure_channel(_API_ENDPOINT)
-    stub = mlservice_pb2_grpc.MLStub(channel)
-    request = mlservice_pb2.Req_RegisterProject(image_name=_IMAGE_NAME,
-                                                name=_PROJECT_NAME)
-
-    project = stub.RegisterProject(request)
+    print('Registering Project, Workflows, and Tasks...')
+    with start_api() as api:
+        api.register_project()
+        api.register_workflows()
 
     # Handle commands.
     domain = commands[0]
