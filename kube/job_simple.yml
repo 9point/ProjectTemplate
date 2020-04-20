@@ -13,9 +13,9 @@ spec:
           command: ["python", "./main.py", "run", "bow_classifier.train"]
           resources:
             limits:
-              memory: "12Gi"
+              memory: "4Gi"
             requests:
-              memory: "12Gi"
+              memory: "4Gi"
           env:
             - name: API_ENDPOINT
               value: localhost:50051

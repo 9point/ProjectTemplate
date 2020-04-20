@@ -67,3 +67,36 @@ class s3_write:
 
         with open(local_path, 'rb') as file:
             client.upload_fileobj(file, _SPACES_BUCKET, self.path)
+
+        self.file_handle.close()
+        self.file_handle = None
+
+
+class s3_append:
+    def __init__(self, path, mode='t'):
+        self.path = path
+        self.mode = mode
+        self.file_handle = None
+
+    def __enter__(self):
+        local_path = os.path.join(_LOCAL_CACHE_DIR, self.path)
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+
+        open_flag = f'a{self.mode}' if os.path.exists(
+            local_path) else f'w{self.mode}'
+
+        self.file_handle = open(local_path, open_flag)
+        return self.file_handle
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.file_handle is None:
+            return
+
+        client = _create_boto3_client()
+        local_path = os.path.join(_LOCAL_CACHE_DIR, self.path)
+
+        with open(local_path, 'rb') as file:
+            client.upload_fileobj(file, _SPACES_BUCKET, self.path)
+
+        self.file_handle.close()
+        self.file_handle = None
