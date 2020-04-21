@@ -36,12 +36,12 @@ class _API:
     def register_workflows(self):
         assert(self._project_id is not None)
         workflows = task_mgr.get_workflows()
-        workflow_names = '|'.join([wf.name for wf in workflows])
 
         stub = self._create_stub()
-        request = mlservice_pb2.Req_RegisterWorkflows(names=workflow_names,
-                                                      project_ref_id=self._project_id)
-        stub.RegisterWorkflows(request)
+        requests = [mlservice_pb2.Req_RegisterWorkflow(
+            name=wf.name, project_ref_id=self._project_id) for wf in workflows]
+
+        stub.RegisterWorkflows(iter(requests))
 
     def register_tasks(self):
         assert(self._project_id is not None)

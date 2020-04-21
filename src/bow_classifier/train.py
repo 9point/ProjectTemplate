@@ -50,9 +50,9 @@ def train(model, criterion, optimizer, dataset, data_loader, epochs, hp, should_
             loss.backward()
             optimizer.step()
 
-            losses.append(loss)
+            losses.append(loss.item())
 
-        train_loss = torch.mean(torch.stack(losses))
+        train_loss = np.mean(losses)
         train_losses.append(train_loss)
 
         if should_log and (epoch + 1) % log_every == 0:

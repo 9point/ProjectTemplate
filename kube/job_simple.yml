@@ -34,7 +34,7 @@ spec:
             - name: IMAGE_NAME
               value: brenmcnamara/test-project
             - name: RUN_ID
-              value: '1234'
+              value: '12345'
             - name: SPACES_BUCKET
               valueFrom:
                 configMapKeyRef:
