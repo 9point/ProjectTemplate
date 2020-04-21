@@ -38,10 +38,11 @@ if __name__ == '__main__':
         print('error: No commands provided.')
         exit(1)
 
-    # print('Registering Project, Workflows, and Tasks...')
-    # with start_api() as api:
-    #     api.register_project()
-    #     api.register_workflows()
+    print('Registering Project, Workflows, and Tasks...')
+    with start_api() as api:
+        api.register_project()
+        api.register_workflows()
+        api.register_tasks()
 
     # Handle commands.
     domain = commands[0]

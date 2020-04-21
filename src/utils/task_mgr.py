@@ -52,6 +52,10 @@ def get_workflows():
     return list(_WORKFLOW_MAP.values())
 
 
+def get_tasks():
+    return list(_TASK_MAP.values())
+
+
 class Workflow:
     def __init__(self, name, call_graph):
         self.name = name

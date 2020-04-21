@@ -12,8 +12,6 @@ spec:
           image: brenmcnamara/test-project
           command: ["python", "./main.py", "run", "bow_classifier.train"]
           resources:
-            limits:
-              memory: "4Gi"
             requests:
               memory: "4Gi"
           env:
@@ -46,4 +44,4 @@ spec:
                   name: configs.primary
                   key: SPACES_REGION
       restartPolicy: Never
-  backoffLimit: 4
+  backoffLimit: 1

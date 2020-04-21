@@ -40,6 +40,16 @@ class _API:
                                                       project_ref_id=self._project_id)
         stub.RegisterWorkflows(request)
 
+    def register_tasks(self):
+        assert(self._project_id is not None)
+        tasks = task_mgr.get_tasks()
+
+        stub = self._create_stub()
+        requests = [mlservice_pb2.Req_RegisterTask(
+            name=t.name, project_ref_id=self._project_id, version=t.version) for t in tasks]
+
+        stub.RegisterTasks(iter(requests))
+
     def _create_stub(self):
         assert(self._channel is not None)
         return mlservice_pb2_grpc.MLStub(self._channel)
