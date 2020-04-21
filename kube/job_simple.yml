@@ -11,9 +11,9 @@ spec:
         - name: test-project
           image: brenmcnamara/test-project
           command: ["python", "./main.py", "run", "bow_classifier.train"]
-          resources:
-            requests:
-              memory: "4Gi"
+          # resources:
+            # requests:
+              # memory: "4Gi"
           env:
             - name: API_ENDPOINT
               value: localhost:50051
@@ -33,6 +33,8 @@ spec:
               value: news-classifier
             - name: IMAGE_NAME
               value: brenmcnamara/test-project
+            - name: RUN_ID
+              value: '1234'
             - name: SPACES_BUCKET
               valueFrom:
                 configMapKeyRef:

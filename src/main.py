@@ -2,7 +2,7 @@ import argparse
 import os
 
 from bow_classifier import train as train_bow_classifier
-from utils.api import start_api
+from utils.api import register_run_TMP, start_api
 from utils.task_mgr import InvalidWorkflowName, register_workflows, run_workflow
 
 
@@ -14,6 +14,12 @@ def run(commands):
     workflow_name = commands[0]
     print(f'Running command: "{workflow_name}"...')
 
+    success = register_run_TMP()
+
+    if not success:
+        print(f'Unable to register run')
+        return
+
     try:
         run_workflow(workflow_name)
     except InvalidWorkflowName:
@@ -22,7 +28,11 @@ def run(commands):
 
 
 def register(commands):
-    print('Blah')
+    print('Registering Project, Workflows, and Tasks...')
+    with start_api() as api:
+        api.register_project()
+        api.register_workflows()
+        api.register_tasks()
 
 
 if __name__ == '__main__':
@@ -37,12 +47,6 @@ if __name__ == '__main__':
     if len(commands) == 0:
         print('error: No commands provided.')
         exit(1)
-
-    print('Registering Project, Workflows, and Tasks...')
-    with start_api() as api:
-        api.register_project()
-        api.register_workflows()
-        api.register_tasks()
 
     # Handle commands.
     domain = commands[0]

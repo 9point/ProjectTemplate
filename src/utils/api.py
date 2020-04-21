@@ -1,12 +1,15 @@
 import grpc
 import os
 
+from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr
+from utils.storage import s3_append, s3_exists, s3_write
 
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
+_RUN_ID = os.environ.get('RUN_ID')
 
 
 class _API:
@@ -66,3 +69,20 @@ class start_api():
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
+
+
+def register_run_TMP():
+    path = f'tmp/jobs/{_RUN_ID}.txt'
+
+    if s3_exists(path):
+        with s3_append(path) as file:
+            now = datetime.now()
+            file.write(f'[{now}]: Trying to create second job run.\n')
+        print(f'Run with id {_RUN_ID} already exists.')
+        return False
+
+    with s3_write(path) as file:
+        now = datetime.now()
+        file.write(f'[{now}]: Starting run...\n')
+
+    return True

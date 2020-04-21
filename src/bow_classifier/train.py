@@ -11,6 +11,7 @@ import time
 
 from bow_classifier.model import Model
 from data_utils import BOWEncoding, WordTokenDataset
+from datetime import datetime
 from guppy import hpy
 from nltk.tokenize.regexp import WordPunctTokenizer
 from torch.utils.data import DataLoader
@@ -22,7 +23,8 @@ EPOCHS = 20
 
 def log(*argv):
     print(*argv)
-    with s3_append(f'tmp/logs/logs.txt') as file:
+    with s3_append(f'tmp/logs/logs.txt', create_if_not_exists=True) as file:
+        file.write(f'[{datetime.now()}]: ')
         file.write(' '.join([arg.__str__() for arg in argv]))
         file.write('\n')
 
