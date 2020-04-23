@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr
-from utils.api import APIRouter
+from utils.api.APIRouter import start_routing
 
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 _IMAGE_NAME = os.environ.get('IMAGE_NAME')
@@ -71,10 +71,9 @@ class _API:
 
         worker_proto = stub.RegisterWorker(request_register_worker)
 
-        # Create the router which communicates with the backend.
+        # Start the router which communicates with the backend.
 
-        router = APIRouter(self._channel, project_proto, worker_proto)
-        router.start()
+        start_routing(self._channel, project_proto, worker_proto)
 
     def _create_stub(self):
         assert(self._channel is not None)

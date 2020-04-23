@@ -9,6 +9,8 @@ def register_workflows(workflows):
 
 
 def run_workflow(name):
+    global _WORKFLOW_MAP
+
     if name not in _WORKFLOW_MAP:
         raise InvalidWorkflowName()
 
@@ -16,9 +18,22 @@ def run_workflow(name):
     workflow()
 
 
+def run_task(name):
+    global _TASK_MAP
+
+    if name not in _TASK_MAP:
+        raise InvalidTaskName()
+
+    task = _TASK_MAP[name]
+    task()
+
+
 def define_workflow(name):
 
     def inner(func):
+        global _WORKFLOW_MAP
+        global _TASK_CALL_TRACKER
+
         # TODO: Think about multi-threading here.
         assert(len(_TASK_CALL_TRACKER) == 0)
 
@@ -37,6 +52,8 @@ def define_workflow(name):
 def define_task(name, version):
 
     def inner(func):
+        global _TASK_MAP
+
         task = Task(func, name, version, func.__doc__)
         _TASK_MAP[name] = task
 
@@ -49,10 +66,14 @@ def define_task(name, version):
 
 
 def get_workflows():
+    global _WORKFLOW_MAP
+
     return list(_WORKFLOW_MAP.values())
 
 
 def get_tasks():
+    global _TASK_MAP
+
     return list(_TASK_MAP.values())
 
 
@@ -62,6 +83,8 @@ class Workflow:
         self.call_graph = call_graph
 
     def __call__(self):
+        global _TASK_MAP
+
         # TODO: For now, assuming a workflow is just a single task.
         assert(len(self.call_graph) == 1)
         task = _TASK_MAP[self.call_graph[0]]
