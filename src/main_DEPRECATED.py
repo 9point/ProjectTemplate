@@ -25,15 +25,24 @@ def register(commands):
 
 
 if __name__ == '__main__':
-    print('Registering Workflows...')
-
     register_workflows([train_bow_classifier])
 
-    print('Starting api...')
-    api = start_api()
+    parser = argparse.ArgumentParser(description='Project Runner')
+    parser.add_argument('commands', type=str, nargs='+')
 
-    print('Registering project...')
-    api.register_project()
+    args = parser.parse_args()
+    commands = args.commands
 
-    print('Registering worker...')
-    api.register_worker()
+    if len(commands) == 0:
+        print('error: No commands provided.')
+        exit(1)
+
+    # Handle commands.
+    domain = commands[0]
+
+    if domain == 'run':
+        run(commands[1:])
+    elif domain == 'register':
+        register(commands[1:])
+    else:
+        print(f'Error: Unrecognized command: "{domain}"')

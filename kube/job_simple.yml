@@ -11,9 +11,6 @@ spec:
         - name: test-project
           image: brenmcnamara/test-project
           command: ["python", "./main.py", "run", "bow_classifier.train"]
-          # resources:
-            # requests:
-              # memory: "4Gi"
           env:
             - name: API_ENDPOINT
               value: localhost:50051
@@ -27,14 +24,16 @@ spec:
                 secretKeyRef:
                   name: secrets.primary
                   key: AWS_SECRET_ACCESS_KEY
+            - name: IMAGE_NAME
+              value: brenmcnamara/test-project
+            - name: JOB_ID
+              value: '55e5d2b5-4aa1-4ccf-9f36-c9da38ab3e06'
+            - name: JOB_INSTANCE_ID
+              value: 'bd947187-3de2-4abc-8de1-9e1304d7b79d'
             - name: LOCAL_CACHE_DIR
               value: /tmp/s3-cache
             - name: PROJECT_NAME
               value: news-classifier
-            - name: IMAGE_NAME
-              value: brenmcnamara/test-project
-            - name: RUN_ID
-              value: '12345'
             - name: SPACES_BUCKET
               valueFrom:
                 configMapKeyRef:
