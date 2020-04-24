@@ -75,6 +75,9 @@ class _API:
 
         start_routing(self._channel, project_proto, worker_proto)
 
+    def run_workflow(self):
+        pass
+
     def _create_stub(self):
         assert(self._channel is not None)
         return mlservice_pb2_grpc.MLStub(self._channel)
