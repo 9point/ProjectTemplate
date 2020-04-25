@@ -35,7 +35,7 @@ def start_routing(channel, project_proto, worker_proto):
     worker_thread.start()
 
     _send_directive(_create_directive(_WORKER_PROTO.id,
-                                      payload_key='v1.worker.ready', payload=json.dumps({})))
+                                      payload_key='v1.worker.ready', payload={}))
 
 
 def stop_routing():
@@ -118,7 +118,7 @@ def _streamer_heartbeat(response):
     assert('id' in payload)
 
     directive = _create_directive(
-        _WORKER_PROTO.id, payload_key='v1.heartbeat.give_pulse', payload=json.dumps({'id': payload['id']}))
+        _WORKER_PROTO.id, payload_key='v1.heartbeat.give_pulse', payload={'id': payload['id']})
 
     _send_directive(directive)
 
