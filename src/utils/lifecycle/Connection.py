@@ -1,32 +1,33 @@
 import grpc
 import os
 
-from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr
-from utils.api.APIRouter import start_routing
+from utils.lifecycle import directive_streamer
+from utils.models.Project import Project
+from utils.models.Worker import Worker
 
-_PROJECT_NAME = os.environ.get('PROJECT_NAME')
-_IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
+_IMAGE_NAME = os.environ.get('IMAGE_NAME')
+_PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 
-class _API:
+class Connection:
     def __init__(self):
         self._channel = None
-        self._project_proto = None
-        self._worker_proto = None
-
-    @property
-    def is_started(self):
-        return self._channel is not None
+        self._project = None
+        self._worker = None
 
     def start(self):
         assert(self._channel is None)
         self._channel = grpc.insecure_channel(_API_ENDPOINT)
 
+    def stop(self):
+        # TODO: IMPLEMENT ME!
+        pass
+
     def register_project(self):
-        assert(self.is_started)
+        assert(self._channel is not None)
 
         workflows = task_mgr.get_workflows()
         tasks = task_mgr.get_tasks()
@@ -51,10 +52,10 @@ class _API:
 
         stub.RegisterTasks(iter(requests_register_tasks))
 
-        self._project_proto = project_proto
+        self._project = Project.from_grpc_message(project_proto)
 
     def register_worker(self):
-        assert(self.is_started)
+        assert(self._channel is not None)
 
         stub = self._create_stub()
 
@@ -71,22 +72,22 @@ class _API:
 
         worker_proto = stub.RegisterWorker(request_register_worker)
 
-        # Start the router which communicates with the backend.
+        self._project = Project.from_grpc_message(project_proto)
+        self._worker = Worker.from_grpc_message(worker_proto)
+        self._start_directive_connection()
 
-        start_routing(self._channel, project_proto, worker_proto)
+    def on_directive(self, payload_key, cb):
+        directive_streamer.on(payload_key, cb)
 
-    def run_workflow(self):
-        pass
+    def _start_directive_connection(self):
+        assert(self._channel is not None)
+        assert(self._worker is not None)
+
+        directive_streamer.start(self._channel, self._worker)
+
+    def send_directive(self, directive):
+        directive_streamer.send(directive)
 
     def _create_stub(self):
         assert(self._channel is not None)
         return mlservice_pb2_grpc.MLStub(self._channel)
-
-
-_API_INSTANCE = _API()
-
-
-def start_api():
-    if not _API_INSTANCE.is_started:
-        _API_INSTANCE.start()
-    return _API_INSTANCE

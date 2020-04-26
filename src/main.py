@@ -2,7 +2,7 @@ import argparse
 import os
 
 from bow_classifier import train as train_bow_classifier
-from utils.api import start_api
+from utils.lifecycle import lifecycle
 from utils.task_mgr import InvalidWorkflowName, register_workflows, run_workflow
 
 
@@ -12,13 +12,9 @@ def start(commands):
         exit(1)
 
     print('Starting api...')
-    api = start_api()
-
-    print('Registering project...')
-    api.register_project()
-
-    print('Registering worker...')
-    api.register_worker()
+    lifecycle.start()
+    lifecycle.register_project()
+    lifecycle.register_worker()
 
 
 def run(commands):
@@ -29,9 +25,8 @@ def run(commands):
     workflow_name = commands[0]
     print(f'Running workflow: "{workflow_name}"...')
 
-    api = start_api()
-    api.register_project()
-    api.run_workflow()
+    lifecycle.start()
+    lifecycle.register_project()
 
 
 if __name__ == '__main__':
