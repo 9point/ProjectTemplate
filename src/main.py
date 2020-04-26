@@ -2,7 +2,7 @@ import argparse
 import os
 
 from bow_classifier import train as train_bow_classifier
-from utils.lifecycle import lifecycle
+from utils import lifecycle
 from utils.task_mgr import InvalidWorkflowName, register_workflows, run_workflow
 
 

@@ -89,18 +89,9 @@ def _receiver(responses):
     for response in responses:
         directive = WorkerDirective.from_grpc_message(response)
 
-        if directive.payload_key == 'v1.heartbeat.check_pulse':
-            payload_key = 'v1.heartbeat.give_pulse'
-            payload = {'id': directive.payload['id']}
-            worker_id = _WORKER.id
-            send(WorkerDirectiveRequest(payload_key=payload_key,
-                                        payload=payload,
-                                        worker_id=worker_id))
-
-        else:
-            for listener in _LISTENERS:
-                if listener.payload_key == directive.payload_key:
-                    listener.cb(directive)
+        for listener in _LISTENERS:
+            if listener['payload_key'] == directive.payload_key:
+                listener['cb'](directive)
 
 
 def _create_stub():

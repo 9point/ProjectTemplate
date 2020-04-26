@@ -6,6 +6,7 @@ from utils import task_mgr
 from utils.lifecycle import directive_streamer
 from utils.models.Project import Project
 from utils.models.Worker import Worker
+from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
 
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
 _IMAGE_NAME = os.environ.get('IMAGE_NAME')
@@ -85,8 +86,14 @@ class Connection:
 
         directive_streamer.start(self._channel, self._worker)
 
-    def send_directive(self, directive):
-        directive_streamer.send(directive)
+    def send_directive(self, payload_key, payload):
+        assert(self._worker is not None)
+
+        request = WorkerDirectiveRequest(payload_key=payload_key,
+                                         payload=payload,
+                                         worker_id=self._worker.id)
+
+        directive_streamer.send(request)
 
     def _create_stub(self):
         assert(self._channel is not None)
