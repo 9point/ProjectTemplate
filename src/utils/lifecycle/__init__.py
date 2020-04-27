@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr
+from utils.lifecycle import task_runner
 from utils.lifecycle.Connection import Connection
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
 
@@ -41,15 +42,24 @@ def register_worker():
     assert(_CONNECTION is not None)
     _CONNECTION.register_worker()
 
-    _CONNECTION.on_directive('v1.task.request_run',
-                             _on_request_task_run)
+    _CONNECTION.on_directive('v1.task.request_start',
+                             _on_request_task_start)
 
     _CONNECTION.on_directive('v1.heartbeat.check_pulse',
                              _on_heartbeat_check_pulse)
 
 
-def _on_request_task_run(directive):
+def run_workflow(workflow_name):
+    global _CONNECTION
+
+    assert(_CONNECTION is not None)
+    _CONNECTION.run_workflow(workflow_name)
+
+
+def _on_request_task_start(directive):
     print('on request task run', directive.payload)
+    task_name = directive.payload['task_name']
+    task_runner.start(task_name)
 
 
 def _on_heartbeat_check_pulse(directive):
@@ -57,10 +67,19 @@ def _on_heartbeat_check_pulse(directive):
 
     assert(_CONNECTION is not None)
 
-    print('checking pulse')
-
     assert('id' in directive.payload)
 
-    payload = {'id': directive.payload['id'], 'status': 'IDLE'}
+    status = 'IDLE' if task_runner.running_task_name() is None else 'WORKING'
+    print('Sending status:', status)
+
+    payload = {'id': directive.payload['id'], 'status': status}
 
     _CONNECTION.send_directive('v1.heartbeat.give_pulse', payload)
+
+
+def _on_task_completed(task_name):
+    if _CONNECTION is None:
+        return
+
+    payload = {'task_name': task_name}
+    _CONNECTION.send(payload_key='v1.task.completed', payload=payload)

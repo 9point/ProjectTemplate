@@ -27,6 +27,7 @@ def run(commands):
 
     lifecycle.start()
     lifecycle.register_project()
+    lifecycle.run_workflow(workflow_name)
 
 
 if __name__ == '__main__':

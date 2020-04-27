@@ -77,6 +77,17 @@ class Connection:
         self._worker = Worker.from_grpc_message(worker_proto)
         self._start_directive_connection()
 
+    def run_workflow(self, workflow_name):
+        assert(self._channel is not None)
+        assert(self._project is not None)
+
+        stub = self._create_stub()
+
+        request = mlservice_pb2.Req_RunWorkflow(project_id=self._project.id,
+                                                workflow_name=workflow_name)
+
+        stub.RunWorkflow(request)
+
     def on_directive(self, payload_key, cb):
         directive_streamer.on(payload_key, cb)
 

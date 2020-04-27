@@ -12,30 +12,19 @@ import time
 from bow_classifier.model import Model
 from data_utils import BOWEncoding, WordTokenDataset
 from datetime import datetime
-from guppy import hpy
 from nltk.tokenize.regexp import WordPunctTokenizer
 from torch.utils.data import DataLoader
 from utils.storage import s3_append, s3_read, s3_write
 from utils.task_mgr import define_task
 
-EPOCHS = 20
+EPOCHS = 2
 
 
 def log(*argv):
     print(*argv)
-    with s3_append(f'tmp/logs/logs.txt', create_if_not_exists=True) as file:
-        file.write(f'[{datetime.now()}]: ')
-        file.write(' '.join([arg.__str__() for arg in argv]))
-        file.write('\n')
 
 
-def log_heap(hp):
-    log('--- MEMORY HEAP ---')
-    log(hp.heap())
-    log('-------------------\n')
-
-
-def train(model, criterion, optimizer, dataset, data_loader, epochs, hp, should_log=True):
+def train(model, criterion, optimizer, dataset, data_loader, epochs, should_log=True):
     train_losses = []
     log_every = 1
     train_loss_estimator_size = 10000
@@ -72,13 +61,12 @@ def train(model, criterion, optimizer, dataset, data_loader, epochs, hp, should_
             log(f'Epoch {epoch + 1}')
             log(f'Accuracy: {float(correct)/total*100:.02f}%.')
             log(f'Training Loss: {train_loss.item()}')
-            log_heap(hp)
             log('\n')
 
     return train_losses
 
 
-def train_multiple(hyperparams_list, train_dataset, valid_dataset, encoding, epochs, hp):
+def train_multiple(hyperparams_list, train_dataset, valid_dataset, encoding, epochs):
     models = []
     train_losses_list = []
     valid_losses = []
@@ -116,8 +104,7 @@ def train_multiple(hyperparams_list, train_dataset, valid_dataset, encoding, epo
                              optimizer,
                              train_dataset,
                              data_loader,
-                             epochs,
-                             hp)
+                             epochs)
 
         # 5. Calculate Validation Loss
 
@@ -134,7 +121,6 @@ def train_multiple(hyperparams_list, train_dataset, valid_dataset, encoding, epo
 
         log(f'Model completed in {(end_time - start_time)/60:.02f}m.')
         log('\n')
-        log_heap(hp)
 
     return models, train_losses_list, valid_losses
 
@@ -164,7 +150,7 @@ def create_confusion_matrix(labels, predictions):
 
 def top_k_labeling_errors(confusion_matrix, category_decoder, k):
 
-    # ZSubtract 1 from diagonal so that the values along
+    # Subtract 1 from diagonal so that the values along
     # diagonal do not show up as top values.
     diag = np.eye(confusion_matrix.shape[0])
     mat = confusion_matrix - diag
@@ -191,16 +177,15 @@ def top_k_labeling_errors(confusion_matrix, category_decoder, k):
 
 @define_task(name="bow_classifier.train_task", version="0.0.1-dev")
 def main():
-    hp = hpy()
-    hp.setrelheap()
-
     log('Loading and setting up the data...')
 
     with s3_read('ml/data/news_classifier/train_data.json') as file:
         data = pd.read_json(file, orient='records')
 
     data = data.sample(frac=1)  # Shuffle the data.
+    data = data.iloc[:1000]
 
+    log(f'# of training examples: {len(data)}')
     train_test_split = 0.95
     split_idx = math.floor(len(data) * train_test_split)
 
@@ -216,8 +201,6 @@ def main():
     valid_dataset = WordTokenDataset(valid_data, encoding)
     valid_dataset.prepare()
 
-    log_heap(hp)
-
     log('Training...')
 
     hyperparams_list = [
@@ -231,8 +214,7 @@ def main():
                                                            train_dataset,
                                                            valid_dataset,
                                                            encoding,
-                                                           epochs=EPOCHS,
-                                                           hp=hp)
+                                                           epochs=EPOCHS)
 
     log('Viewing results of training...')
     best_model_idx = torch.argmin(torch.FloatTensor(valid_losses)).item()
