@@ -28,12 +28,13 @@ def running_task_name():
     return _RUNNING_TASK_NAME
 
 
-def on_task_complete():
+def on_task_complete(cb):
     global _LISTENERS
-    _LISTENERS.append({'key': 'task_completed'})
+    _LISTENERS.append({'cb': cb, 'key': 'task_completed'})
 
 
 def _start_worker(task_name):
+    global _LISTENERS
     global _RUNNING_TASK_NAME
 
     assert(_RUNNING_TASK_NAME is None)
@@ -45,8 +46,9 @@ def _start_worker(task_name):
     work_thread.start()
     work_thread.join()
 
-    print('Worker has completed its work. Joining.')
     _RUNNING_TASK_NAME = None
+
+    # TODO: Need to check if thread is joining due to error. Need to report error.
 
 
 def _start_eventloop():

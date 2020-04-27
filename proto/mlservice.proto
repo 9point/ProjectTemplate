@@ -89,6 +89,12 @@ message Obj_Task {
   string version = 8;
 }
 
+message Req_RouteWorkerLog {
+  string payload = 1;
+  string payload_key = 2;
+  string worker_id = 3;
+}
+
 message Req_GetProject {
   string name = 1;
 }
@@ -141,5 +147,6 @@ service ML {
   rpc RegisterWorkflows(stream Req_RegisterWorkflow) returns (stream Obj_Workflow);
   rpc RegisterTasks(stream Req_RegisterTask) returns (stream Obj_Task);
   rpc RouteWorkerDirectives(stream Req_RouteWorkerDirective) returns (stream Obj_WorkerDirective);
+  rpc RouteWorkerLogs(stream Req_RouteWorkerLog) returns (stream Obj_WorkerLog);
   rpc RunWorkflow(Req_RunWorkflow) returns (Obj_WorkflowRun);
 }

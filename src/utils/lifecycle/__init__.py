@@ -48,6 +48,8 @@ def register_worker():
     _CONNECTION.on_directive('v1.heartbeat.check_pulse',
                              _on_heartbeat_check_pulse)
 
+    task_runner.on_task_complete(_on_task_completed)
+
 
 def run_workflow(workflow_name):
     global _CONNECTION
@@ -56,10 +58,23 @@ def run_workflow(workflow_name):
     _CONNECTION.run_workflow(workflow_name)
 
 
+def send_directive(payload_key, payload):
+    global _CONNECTION
+
+    assert(_CONNECTION is not None)
+    _CONNECTION.send_directive(payload_key, payload)
+
+
 def _on_request_task_start(directive):
+    global _CONNECTION
+
     print('on request task run', directive.payload)
     task_name = directive.payload['task_name']
     task_runner.start(task_name)
+
+    # TODO: project_id and task_id in payload.
+    payload = {'task_name': task_name}
+    _CONNECTION.send_directive('v1.task.starting', payload)
 
 
 def _on_heartbeat_check_pulse(directive):
@@ -82,4 +97,5 @@ def _on_task_completed(task_name):
         return
 
     payload = {'task_name': task_name}
-    _CONNECTION.send(payload_key='v1.task.completed', payload=payload)
+    _CONNECTION.send_directive(
+        payload_key='v1.task.completed', payload=payload)

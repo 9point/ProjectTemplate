@@ -13,6 +13,7 @@ _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 
+# TODO: Rename to DirectiveConnection
 class Connection:
     def __init__(self):
         self._channel = None
