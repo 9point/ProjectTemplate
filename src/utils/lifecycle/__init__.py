@@ -65,15 +65,25 @@ def send_directive(payload_key, payload):
     _CONNECTION.send_directive(payload_key, payload)
 
 
+def workflow_run_id():
+    return task_runner.running_workflow_run_id()
+
 def _on_request_task_start(directive):
     global _CONNECTION
 
-    print('on request task run', directive.payload)
-    task_name = directive.payload['task_name']
-    task_runner.start(task_name)
+    assert('taskName' in directive.payload)
+    assert('workflowRunID' in directive.payload)
+
+    task_name = directive.payload['taskName']
+    workflow_run_id = directive.payload['workflowRunID']
+    task_runner.start(task_name, workflow_run_id)
+    
+    print('Starting task:')
+    print(f'Task Name: {task_name}')
+    print(f'Workflow Run ID: {workflow_run_id}')
 
     # TODO: project_id and task_id in payload.
-    payload = {'task_name': task_name}
+    payload = {'taskName': task_name}
     _CONNECTION.send_directive('v1.task.starting', payload)
 
 
@@ -92,10 +102,10 @@ def _on_heartbeat_check_pulse(directive):
     _CONNECTION.send_directive('v1.heartbeat.give_pulse', payload)
 
 
-def _on_task_completed(task_name):
+def _on_task_completed(task_name, workflow_run_id):
     if _CONNECTION is None:
         return
 
-    payload = {'task_name': task_name}
+    payload = {'taskName': task_name, 'workflowRunID': workflow_run_id}
     _CONNECTION.send_directive(
         payload_key='v1.task.completed', payload=payload)

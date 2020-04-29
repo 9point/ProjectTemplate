@@ -17,12 +17,12 @@ spec:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: secrets.primary
+                  name: primary.secrets
                   key: AWS_ACCESS_KEY_ID
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: secrets.primary
+                  name: primary.secrets
                   key: AWS_SECRET_ACCESS_KEY
             - name: IMAGE_NAME
               value: brenmcnamara/test-project
@@ -37,12 +37,12 @@ spec:
             - name: SPACES_BUCKET
               valueFrom:
                 configMapKeyRef:
-                  name: configs.primary
+                  name: primary.configs
                   key: SPACES_BUCKET
             - name: SPACES_REGION
               valueFrom:
                 configMapKeyRef:
-                  name: configs.primary
+                  name: primary.configs
                   key: SPACES_REGION
       restartPolicy: Never
   backoffLimit: 1
