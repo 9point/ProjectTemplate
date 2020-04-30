@@ -1,4 +1,4 @@
-FROM brenmcnamara/ml-base
+FROM 9point/ml-project
 
 WORKDIR /app
 
