@@ -27,7 +27,9 @@ def run(commands):
 
     lifecycle.start()
     lifecycle.register_project()
-    lifecycle.run_workflow(workflow_name)
+    workflow_run = lifecycle.run_workflow(workflow_name)
+
+    print(f'WorkflowRun ID: {workflow_run.id}')
 
 
 if __name__ == '__main__':

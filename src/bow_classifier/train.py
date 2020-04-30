@@ -18,7 +18,7 @@ from utils import logger as l
 from utils.storage import s3_append, s3_read, s3_write
 from utils.task_mgr import define_task
 
-EPOCHS = 2
+EPOCHS = 20
 
 
 def train(model, criterion, optimizer, dataset, data_loader, epochs, should_log=True):
@@ -178,7 +178,6 @@ def main():
         data = pd.read_json(file, orient='records')
 
     data = data.sample(frac=1)  # Shuffle the data.
-    data = data.iloc[:5000]
 
     l.write(f'# of training examples: {len(data)}')
     train_test_split = 0.95
