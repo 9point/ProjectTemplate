@@ -55,7 +55,7 @@ def run_workflow(workflow_name):
     global _CONNECTION
 
     assert(_CONNECTION is not None)
-    _CONNECTION.run_workflow(workflow_name)
+    return _CONNECTION.run_workflow(workflow_name)
 
 
 def send_directive(payload_key, payload):

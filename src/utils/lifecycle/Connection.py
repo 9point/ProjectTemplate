@@ -87,7 +87,7 @@ class Connection:
         request = mlservice_pb2.Req_RunWorkflow(project_id=self._project.id,
                                                 workflow_name=workflow_name)
 
-        stub.RunWorkflow(request)
+        return stub.RunWorkflow(request)
 
     def on_directive(self, payload_key, cb):
         directive_streamer.on(payload_key, cb)
