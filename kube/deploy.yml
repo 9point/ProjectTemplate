@@ -1,19 +1,24 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: test-job
-  labels:
-    rank: worker
+  name: test-worker
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-worker
   template:
+    metadata:
+      labels:
+        app: test-worker
     spec:
       containers:
-        - name: test-project
-          image: brenmcnamara/test-project
-          command: ["python", "./main.py", "run", "bow_classifier.train"]
+        - name: test-worker
+          image: 9point/ml-project-news-classifier
+          command: ["python", "./main.py", "start"]
           env:
             - name: API_ENDPOINT
-              value: mlwebservice.default.svc.cluster.local:50051
+              value: mlapiservice.default.svc.cluster.local:50051
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -40,5 +45,4 @@ spec:
                 configMapKeyRef:
                   name: primary.configs
                   key: SPACES_REGION
-      restartPolicy: Never
-  backoffLimit: 1
+      restartPolicy: Always
