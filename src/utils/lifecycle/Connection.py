@@ -3,7 +3,7 @@ import os
 
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr
-from utils.lifecycle import directive_streamer
+from utils.lifecycle.DirectiveStreamer import DirectiveStreamer
 from utils.models.Project import Project
 from utils.models.Worker import Worker
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
@@ -17,6 +17,7 @@ _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 class Connection:
     def __init__(self):
         self._channel = None
+        self._directive_streamer = None
         self._project = None
         self._worker = None
 
@@ -29,6 +30,13 @@ class Connection:
         pass
 
     def register_project(self):
+        """
+        Register this project with the API Service. This gives the API
+        Service any information about what this worker is capable of working
+        on. Calling this method does not register the worker and will not make
+        the worker available for accepting directives.
+        """
+
         assert(self._channel is not None)
 
         workflows = task_mgr.get_workflows()
@@ -55,8 +63,18 @@ class Connection:
         stub.RegisterTasks(iter(requests_register_tasks))
 
         self._project = Project.from_grpc_message(project_proto)
+        return self._project
 
     def register_worker(self):
+        """
+        Registers the worker with the API Service. This will let the API
+        Service that this worker is ready and connected so it can receive
+        directives from the service.
+
+        Note that this method must assumes the project associated with this
+        worker is already registered and up-to-date.
+        """
+
         assert(self._channel is not None)
 
         stub = self._create_stub()
@@ -76,7 +94,12 @@ class Connection:
 
         self._project = Project.from_grpc_message(project_proto)
         self._worker = Worker.from_grpc_message(worker_proto)
-        self._start_directive_connection()
+
+        self._directive_streamer = DirectiveStreamer(self._channel,
+                                                     self._worker)
+        self._directive_streamer.start()
+
+        return self._worker
 
     def run_workflow(self, workflow_name):
         assert(self._channel is not None)
@@ -90,22 +113,17 @@ class Connection:
         return stub.RunWorkflow(request)
 
     def on_directive(self, payload_key, cb):
-        directive_streamer.on(payload_key, cb)
-
-    def _start_directive_connection(self):
-        assert(self._channel is not None)
-        assert(self._worker is not None)
-
-        directive_streamer.start(self._channel, self._worker)
+        self._directive_streamer.on(payload_key, cb)
 
     def send_directive(self, payload_key, payload):
         assert(self._worker is not None)
+        assert(self._directive_streamer is not None)
 
         request = WorkerDirectiveRequest(payload_key=payload_key,
                                          payload=payload,
                                          worker_id=self._worker.id)
 
-        directive_streamer.send(request)
+        self._directive_streamer.send(request)
 
     def _create_stub(self):
         assert(self._channel is not None)

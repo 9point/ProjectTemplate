@@ -1,4 +1,5 @@
 import datetime
+import threading
 
 from utils import lifecycle
 
@@ -93,6 +94,8 @@ class _ProgressBar:
                    'workflowRunID': workflow_run_id}
 
         lifecycle.send_directive(_LOG_PAYLOAD_KEY, payload)
+
+        _ORDER += 1
 
     def show(self):
         global _LOG_PAYLOAD_KEY

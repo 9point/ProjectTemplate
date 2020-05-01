@@ -3,7 +3,7 @@ import os
 
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
-from utils import task_mgr
+from utils import task_mgr, worker_thread
 from utils.lifecycle import task_runner
 from utils.lifecycle.Connection import Connection
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
@@ -16,15 +16,26 @@ _API_ENDPOINT = os.environ.get('API_ENDPOINT')
 _CONNECTION = None
 
 
-def start():
+def start_worker():
+    worker_thread.start_thread()
+
+
+def stop_worker():
+    # TODO: IMPLEMENT ME!
+    pass
+
+
+def start_connection():
     global _CONNECTION
 
     assert(_CONNECTION is None)
+
+    # NOTE: The connection exists on a thread separate from the worker thread.
     _CONNECTION = Connection()
     _CONNECTION.start()
 
 
-def stop():
+def stop_connection():
     # TODO: IMPLEMENT ME
     pass
 
@@ -33,14 +44,15 @@ def register_project():
     global _CONNECTION
 
     assert(_CONNECTION is not None)
-    _CONNECTION.register_project()
+    return _CONNECTION.register_project()
 
 
 def register_worker():
     global _CONNECTION
 
     assert(_CONNECTION is not None)
-    _CONNECTION.register_worker()
+
+    worker = _CONNECTION.register_worker()
 
     _CONNECTION.on_directive('v1.task.request_start',
                              _on_request_task_start)
@@ -49,6 +61,8 @@ def register_worker():
                              _on_heartbeat_check_pulse)
 
     task_runner.on_task_complete(_on_task_completed)
+
+    return worker
 
 
 def run_workflow(workflow_name):
@@ -68,6 +82,7 @@ def send_directive(payload_key, payload):
 def workflow_run_id():
     return task_runner.running_workflow_run_id()
 
+
 def _on_request_task_start(directive):
     global _CONNECTION
 
@@ -77,7 +92,7 @@ def _on_request_task_start(directive):
     task_name = directive.payload['taskName']
     workflow_run_id = directive.payload['workflowRunID']
     task_runner.start(task_name, workflow_run_id)
-    
+
     print('Starting task:')
     print(f'Task Name: {task_name}')
     print(f'Workflow Run ID: {workflow_run_id}')

@@ -11,10 +11,12 @@ def start(commands):
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('Starting api...')
-    lifecycle.start()
-    lifecycle.register_project()
-    lifecycle.register_worker()
+    print('Starting worker...')
+    lifecycle.start_connection()
+    worker = lifecycle.register_worker()
+    lifecycle.start_worker()
+
+    print(f'Worker running: {worker.id}')
 
 
 def run(commands):
@@ -25,15 +27,25 @@ def run(commands):
     workflow_name = commands[0]
     print(f'Running workflow: "{workflow_name}"...')
 
-    lifecycle.start()
-    lifecycle.register_project()
+    lifecycle.start_connection()
     workflow_run = lifecycle.run_workflow(workflow_name)
 
     print(f'WorkflowRun ID: {workflow_run.id}')
 
 
+def register(commands):
+    if len(commands) > 0:
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    print('Registering Project...')
+    lifecycle.start_connection()
+    project = lifecycle.register_project()
+
+    print(f'Project registered: {project.id}')
+
+
 if __name__ == '__main__':
-    print('Registering Workflows...')
     register_workflows([train_bow_classifier])
 
     parser = argparse.ArgumentParser(description='Project Runner')
@@ -49,6 +61,7 @@ if __name__ == '__main__':
     domain = commands[0]
 
     routines = {
+        'register': register,
         'run': run,
         'start': start,
     }
