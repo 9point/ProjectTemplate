@@ -18,10 +18,10 @@ from utils import logger as l
 from utils.storage import s3_append, s3_read, s3_write
 from utils.task_mgr import define_task
 
-EPOCHS = 20
+EPOCHS = 5
 
 
-def train(model, criterion, optimizer, dataset, data_loader, epochs, should_log=True):
+def train(model, model_idx, criterion, optimizer, dataset, data_loader, epochs, should_log=True):
     train_losses = []
     log_every = 1
     train_loss_estimator_size = 10000
@@ -29,6 +29,12 @@ def train(model, criterion, optimizer, dataset, data_loader, epochs, should_log=
     for epoch in range(epochs):
         losses = []
 
+        epoch_progress = l.progressbar(key=f'model_{model_idx}_epoch{epoch}',
+                                       name=f'Training Epoch {epoch + 1}')
+
+        epoch_progress.show()
+
+        batch_count = len(data_loader)
         for i, samples in enumerate(data_loader):
             optimizer.zero_grad()
             output = model(samples)
@@ -37,6 +43,7 @@ def train(model, criterion, optimizer, dataset, data_loader, epochs, should_log=
             optimizer.step()
 
             losses.append(loss.item())
+            epoch_progress.set_progress((i+1) / float(batch_count))
 
         train_loss = np.mean(losses)
         train_losses.append(train_loss)
@@ -55,7 +62,6 @@ def train(model, criterion, optimizer, dataset, data_loader, epochs, should_log=
             total = len(labels)
             correct = torch.sum(labels == predictions)
 
-            l.write(f'Epoch {epoch + 1}')
             l.write(f'Accuracy: {float(correct)/total*100:.02f}%.')
             l.write(f'Training Loss: {train_loss.item()}\n')
 
@@ -68,7 +74,7 @@ def train_multiple(hyperparams_list, train_dataset, valid_dataset, encoding, epo
     valid_losses = []
 
     for i, hyperparams in enumerate(hyperparams_list):
-        l.write(f'Starting training Model {i+1} / {len(hyperparams_list)}...')
+        l.write(f'## Model {i+1} / {len(hyperparams_list)}...')
 
         start_time = time.time()
 
@@ -96,6 +102,7 @@ def train_multiple(hyperparams_list, train_dataset, valid_dataset, encoding, epo
         # 4. Train the Model
 
         train_losses = train(model,
+                             i,
                              criterion,
                              optimizer,
                              train_dataset,
@@ -172,14 +179,14 @@ def top_k_labeling_errors(confusion_matrix, category_decoder, k):
 
 @define_task(name="bow_classifier.train_task", version="0.0.1-dev")
 def main():
-    l.write('Loading and setting up the data...')
+    l.write('# Loading Data')
 
     with s3_read('ml/data/news_classifier/train_data.json') as file:
         data = pd.read_json(file, orient='records')
 
     data = data.sample(frac=1)  # Shuffle the data.
 
-    l.write(f'# of training examples: {len(data)}')
+    l.write(f'Training example count: {len(data)}')
     train_test_split = 0.95
     split_idx = math.floor(len(data) * train_test_split)
 
@@ -195,7 +202,7 @@ def main():
     valid_dataset = WordTokenDataset(valid_data, encoding)
     valid_dataset.prepare()
 
-    l.write('Training...')
+    l.write('# Training')
 
     hyperparams_list = [
         {'batch_size': 100, 'lr': 1e-3},
@@ -210,7 +217,7 @@ def main():
                                                            encoding,
                                                            epochs=EPOCHS)
 
-    l.write('Viewing results of training...')
+    l.write('# Viewing Results')
     best_model_idx = torch.argmin(torch.FloatTensor(valid_losses)).item()
 
     best_model = models[best_model_idx]
@@ -243,8 +250,6 @@ def main():
         error_1 = label_decoder[error[1]]
         l.write(f'{i+1}. "{error_0}" confused for "{error_1}"')
 
-    l.write('Persisting Model...')
+    l.write('# Persisting Model')
     with s3_write('ml/models/news_classifier/bow_model.torch', 'b') as file:
         torch.save(best_model.state_dict(), file)
-
-    l.write('Done')
