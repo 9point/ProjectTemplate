@@ -5,6 +5,7 @@ from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr, worker_thread
 from utils.lifecycle.Connection import Connection
+from utils.lifecycle.Logger import Logger
 from utils.lifecycle.TaskRunner import TaskRunner
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
 
@@ -14,21 +15,31 @@ _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 _CONNECTION = None
+_LOGGER = None
 _TASK_RUNNER = None
 _WORKER_SUBSCRIPTIONS = []
 
 
 def start_worker():
+    global _CONNECTION
+    global _LOGGER
     global _TASK_RUNNER
     global _WORKER_SUBSCRIPTIONS
 
+    assert(_CONNECTION is not None)
     assert(_TASK_RUNNER is None)
 
     worker_thread.start_thread()
 
     _TASK_RUNNER = TaskRunner()
+    _LOGGER = Logger()
 
-    _WORKER_SUBSCRIPTIONS.extend([worker_thread.add_subscriber(_TASK_RUNNER)])
+    _LOGGER.set_connection(_CONNECTION)
+
+    _WORKER_SUBSCRIPTIONS.extend([
+        worker_thread.add_subscriber(_TASK_RUNNER),
+        worker_thread.add_subscriber(_LOGGER),
+    ])
 
 
 def stop_worker():
@@ -89,6 +100,11 @@ def send_directive(payload_key, payload):
 
     assert(_CONNECTION is not None)
     _CONNECTION.send_directive(payload_key, payload)
+
+
+def log(payload):
+    assert(_LOGGER is not None)
+    _LOGGER.send_log(payload)
 
 
 def workflow_run_id():

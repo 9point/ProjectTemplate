@@ -185,7 +185,7 @@ def main():
         data = pd.read_json(file, orient='records')
 
     data = data.sample(frac=1)  # Shuffle the data.
-    data = data.iloc[:1000]
+    data = data[:1000]
 
     l.write(f'Training example count: {len(data)}')
     train_test_split = 0.95
