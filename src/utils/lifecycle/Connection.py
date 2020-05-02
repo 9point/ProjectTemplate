@@ -1,5 +1,6 @@
 import grpc
 import os
+import time
 
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr
@@ -52,15 +53,23 @@ class Connection:
 
         project_proto = stub.RegisterProject(request_register_project)
 
-        requests_register_workflows = [mlservice_pb2.Req_RegisterWorkflow(
-            name=wf.name, project_ref_id=project_proto.id) for wf in workflows]
+        requests_register_tasks = [
+            mlservice_pb2.Req_RegisterTask(name=t.name,
+                                           project_ref_id=project_proto.id,
+                                           version=t.version)
+            for t in tasks]
 
-        stub.RegisterWorkflows(iter(requests_register_workflows))
+        tasks_proto = [
+            t for t in stub.RegisterTasks(iter(requests_register_tasks))]
 
-        requests_register_tasks = [mlservice_pb2.Req_RegisterTask(
-            name=t.name, project_ref_id=project_proto.id, version=t.version) for t in tasks]
+        requests_register_workflows = [
+            mlservice_pb2.Req_RegisterWorkflow(name=wf.name,
+                                               project_ref_id=project_proto.id,
+                                               task_names='|'.join(wf.task_names))
+            for wf in workflows]
 
-        stub.RegisterTasks(iter(requests_register_tasks))
+        workflows_proto = [
+            wf for wf in stub.RegisterWorkflows(iter(requests_register_workflows))]
 
         self._project = Project.from_grpc_message(project_proto)
         return self._project

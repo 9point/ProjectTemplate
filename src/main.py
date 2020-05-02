@@ -1,9 +1,10 @@
 import argparse
 import os
 
-from bow_classifier import train as train_bow_classifier
+from bow_classifier import train as build_bow_classifier
+from glove_classifier import build as build_glove_classifier
 from utils import lifecycle
-from utils.task_mgr import InvalidWorkflowName, register_workflows, run_workflow
+from utils.task_mgr import get_workflows, InvalidWorkflowName, register_workflows, run_workflow
 
 
 def start(commands):
@@ -46,7 +47,11 @@ def register(commands):
 
 
 if __name__ == '__main__':
-    register_workflows([train_bow_classifier])
+    register_workflows([build_bow_classifier, build_glove_classifier])
+
+    for wf in get_workflows():
+        print(wf.name)
+        print(wf.call_graph)
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')

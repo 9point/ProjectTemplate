@@ -11,19 +11,18 @@ from torch.utils.data import Dataset
 tokenizer = WordPunctTokenizer()
 
 
-def load_embeddings(path, embedding_dim):
-    with open(path) as file:
-        lines = file.readlines()
+def load_embeddings(file, embedding_dim):
+    lines = file.readlines()
 
-        index = []
-        embeddings = np.zeros((len(lines), embedding_dim))
+    index = []
+    embeddings = np.zeros((len(lines), embedding_dim))
 
-        for i, l in enumerate(lines):
-            tokens = l.split(' ')
-            index.append(tokens[0])
-            embeddings[i, :] = tokens[1:]
+    for i, l in enumerate(lines):
+        tokens = l.split(' ')
+        index.append(tokens[0])
+        embeddings[i, :] = tokens[1:]
 
-        return pd.DataFrame(embeddings, index=index)
+    return pd.DataFrame(embeddings, index=index)
 
 
 def cleanup_and_tokenize_text(text):

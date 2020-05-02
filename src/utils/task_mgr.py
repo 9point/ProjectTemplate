@@ -82,6 +82,10 @@ class Workflow:
         self.name = name
         self.call_graph = call_graph
 
+    @property
+    def task_names(self):
+        return self.call_graph
+
     def __call__(self):
         global _TASK_MAP
 
