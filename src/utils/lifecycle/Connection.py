@@ -103,12 +103,19 @@ class Connection:
 
     def run_workflow(self, workflow_name):
         assert(self._channel is not None)
-        assert(self._project is not None)
 
         stub = self._create_stub()
 
-        request = mlservice_pb2.Req_RunWorkflow(project_id=self._project.id,
+        # Get the project. Assuming it has already been registered.
+
+        request_get_project = mlservice_pb2.Req_GetProject(name=_PROJECT_NAME)
+        project_proto = stub.GetProject(request_get_project)
+        project = Project.from_grpc_message(project_proto)
+
+        request = mlservice_pb2.Req_RunWorkflow(project_id=project.id,
                                                 workflow_name=workflow_name)
+
+        self._project = project
 
         return stub.RunWorkflow(request)
 

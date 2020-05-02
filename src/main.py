@@ -13,8 +13,8 @@ def start(commands):
 
     print('Starting worker...')
     lifecycle.start_connection()
-    worker = lifecycle.register_worker()
     lifecycle.start_worker()
+    worker = lifecycle.register_worker()
 
     print(f'Worker running: {worker.id}')
 

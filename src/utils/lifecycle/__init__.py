@@ -4,20 +4,31 @@ import os
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr, worker_thread
-from utils.lifecycle import task_runner
 from utils.lifecycle.Connection import Connection
+from utils.lifecycle.TaskRunner import TaskRunner
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
 
 
-_PROJECT_NAME = os.environ.get('PROJECT_NAME')
-_IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
+_IMAGE_NAME = os.environ.get('IMAGE_NAME')
+_PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 _CONNECTION = None
+_TASK_RUNNER = None
+_WORKER_SUBSCRIPTIONS = []
 
 
 def start_worker():
+    global _TASK_RUNNER
+    global _WORKER_SUBSCRIPTIONS
+
+    assert(_TASK_RUNNER is None)
+
     worker_thread.start_thread()
+
+    _TASK_RUNNER = TaskRunner()
+
+    _WORKER_SUBSCRIPTIONS.extend([worker_thread.add_subscriber(_TASK_RUNNER)])
 
 
 def stop_worker():
@@ -49,6 +60,7 @@ def register_project():
 
 def register_worker():
     global _CONNECTION
+    global _TASK_RUNNER
 
     assert(_CONNECTION is not None)
 
@@ -60,7 +72,7 @@ def register_worker():
     _CONNECTION.on_directive('v1.heartbeat.check_pulse',
                              _on_heartbeat_check_pulse)
 
-    task_runner.on_task_complete(_on_task_completed)
+    _TASK_RUNNER.on_task_complete(_on_task_completed)
 
     return worker
 
@@ -80,18 +92,27 @@ def send_directive(payload_key, payload):
 
 
 def workflow_run_id():
-    return task_runner.running_workflow_run_id()
+    global _TASK_RUNNER
+
+    if _TASK_RUNNER is None:
+        return None
+
+    return _TASK_RUNNER.active_workflow_run_id
 
 
 def _on_request_task_start(directive):
     global _CONNECTION
+    global _TASK_RUNNER
+
+    assert(_CONNECTION is not None)
+    assert(_TASK_RUNNER is not None)
 
     assert('taskName' in directive.payload)
     assert('workflowRunID' in directive.payload)
 
     task_name = directive.payload['taskName']
     workflow_run_id = directive.payload['workflowRunID']
-    task_runner.start(task_name, workflow_run_id)
+    _TASK_RUNNER.start_task(task_name, workflow_run_id)
 
     print('Starting task:')
     print(f'Task Name: {task_name}')
@@ -104,12 +125,14 @@ def _on_request_task_start(directive):
 
 def _on_heartbeat_check_pulse(directive):
     global _CONNECTION
+    global _TASK_RUNNER
 
     assert(_CONNECTION is not None)
+    assert(_TASK_RUNNER is not None)
 
     assert('id' in directive.payload)
 
-    status = 'IDLE' if task_runner.running_task_name() is None else 'WORKING'
+    status = 'IDLE' if _TASK_RUNNER.active_task_name is None else 'WORKING'
     print('Sending status:', status)
 
     payload = {'id': directive.payload['id'], 'status': status}
