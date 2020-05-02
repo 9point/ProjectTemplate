@@ -16,7 +16,6 @@ from nltk.tokenize.regexp import WordPunctTokenizer
 from torch.utils.data import DataLoader
 from utils import logger as l
 from utils.storage import s3_read, s3_write
-from utils.task_mgr import define_task
 
 EPOCHS = 5
 
@@ -177,7 +176,6 @@ def top_k_labeling_errors(confusion_matrix, category_decoder, k):
     return label_errors
 
 
-@define_task(name="bow_classifier.train_task", version="0.0.1-dev")
 def main():
     l.write('# Loading Data')
 
