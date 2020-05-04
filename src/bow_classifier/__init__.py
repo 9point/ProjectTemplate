@@ -1,44 +1,29 @@
-import typing
+import asyncio
 
-from bow_classifier import _train
-from utils.task_mgr import define_task, define_workflow, engine
-from utils.task_mgr.types import PyTorchModule
+from bow_classifier.train import main as _train
+from typing import Any, List, TypedDict
+from utils import define
+from utils.types import PyTorchModule
 
-
-@define_workflow(name="bow_classifier.build_and_eval")
-def build_and_eval() -> PyTorchModule:
-    build_exec = build()
-    models = engine.wait(build_exec)
-    return evaluate_models(models)
+Data = Any
+HyperParams = TypedDict('HyperParams', lr=float)
+Model = PyTorchModule
 
 
-@define_workflow(name="bow_classifier.build")
-def build() -> typing.List[PyTorchModule]:
-    hyperparams = [
-        {'lr': 0.1,  'batch_size': 100},
-        {'lr': 0.01, 'batch_size': 100},
-        {'lr': 0.1,  'batch_size': 10},
-        {'lr': 0.01, 'batch_size': 10},
-    ]
+@define.workflow(name="bow_classifier.build")
+async def build(data: Data, epochs: int, hyperparams: List[HyperParams]) -> Model:
+    training_execs = [
+        train_model(data, epochs, lr=hp['lr']) for hp in hyperparams]
 
-    training_execs = []
-    for h in hyperparams:
-        train_exec = train_model(epochs=20,
-                                 batch_size=h['batch_size'],
-                                 lr=h['lr'])
-
-        training_execs.append(train_exec)
-
-    return training_execs
+    models = await asyncio.gather(training_execs)
+    return await pick_best_model(data, models)
 
 
-@define_task(name="bow_classifier.train_model", version="0.0.1-dev")
-def train_model(epochs: int, batch_size: int, lr: float) -> PyTorchModule:
-    return _train.main(epochs=epochs,
-                       batch_size=batch_size,
-                       lr=lr)
+@define.task(name="bow_classifier.train_model", version="0.0.1-dev")
+def train_model(data: Data, epochs: int, lr: float) -> Model:
+    return _train(epochs=epochs, lr=lr)
 
 
-@define_task(name="bow_classifier.evaluate_models", version="0.0.1-dev")
-def evaluate_models(models: typing.List[PyTorchModule]) -> PyTorchModule:
+@define.task(name="bow_classifier.pick_best_model", version="0.0.1-dev")
+def pick_best_model(data: Data, models: List[PyTorchModule]) -> Model:
     return 'hello world'

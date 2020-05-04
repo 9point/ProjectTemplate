@@ -15,6 +15,7 @@ _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 _CONNECTION = None
+_ENGINE = None
 _LOGGER = None
 _TASK_RUNNER = None
 _WORKER_SUBSCRIPTIONS = []
@@ -88,6 +89,14 @@ def register_worker():
     return worker
 
 
+def register_task_exec(task_exec):
+    pass
+
+
+def register_workflow_exec(wf_exec):
+    pass
+
+
 def run_workflow(workflow_name):
     global _CONNECTION
 
@@ -100,6 +109,11 @@ def send_directive(payload_key, payload):
 
     assert(_CONNECTION is not None)
     _CONNECTION.send_directive(payload_key, payload)
+
+
+def engine():
+    global _ENGINE
+    return _ENGINE
 
 
 def log(payload):

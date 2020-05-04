@@ -1,8 +1,3 @@
-import typing
-
-from utils.introspection.trace import trace
-
-
 class TaskExecutable:
     """
     Represents the code that executes a task. Running the code will cause the
@@ -17,11 +12,5 @@ class TaskExecutable:
         self.run = run
         self.version = version
 
-    def __call__(self):
-        with trace() as t:
-            t.visit(self)
-
-        return ExecutableResult()
-
-    def exec(self):
-        return self.run()
+    def __call__(self, *args, **kwargs):
+        return self.engine.execute_task(*args, **kwargs)

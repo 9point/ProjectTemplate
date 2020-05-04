@@ -44,7 +44,7 @@ def from_type(t, interpret_none_as_void=False):
         return {
             'parameters': parameters,
             'return': from_type(t.return_annotation,
-                                                    interpret_none_as_void=True),
+                                interpret_none_as_void=True),
             'schemaType': 'Function',
             'type': 'Schema',
         }
