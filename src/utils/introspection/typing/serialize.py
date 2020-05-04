@@ -5,29 +5,46 @@ import typing
 # https://github.com/ilevkivskyi/typing_inspect/blob/master/typing_inspect.py
 
 
-def serialize_val(val):
-    if inspect.isfunction(val):
-        return serialize_type(inspect.signature(val))
+_T_PRIMITIVES = {'Bool': bool, 'Float': float, 'Int': int, 'String': str}
+
+
+def from_val(val):
+
+    if _is_val_primitive(val):
+        return from_type(type(val))
+
+    elif val is None:
+        return _create_schema_primitive(name='Nil')
+
+    elif inspect.isfunction(val):
+        return from_type(inspect.signature(val))
 
     return _create_schema_unresolved(reason='MissingImpl')
 
 
-def serialize_type(t):
+def from_type(t, interpret_none_as_void=False):
     print(t)
-    print('is empty:', _is_empty(t))
 
-    if t is str:
-        return _create_schema_primitive(name='String')
+    # TODO: Should include byte sizes for float and int types.
+    if _is_type_primitive(t):
+        for _k, _t in _T_PRIMITIVES.items():
+            if _t is t:
+                return _create_schema_primitive(name=_k)
 
-    if _is_empty(t):
+    if t is None:
+        return _create_schema_void() if interpret_none_as_void else _create_schema_primitive(name='Nil')
+
+    if _is_type_empty(t):
         return _create_schema_unresolved(reason='MissingAnnotation')
 
     if type(t) is inspect.Signature:
-        parameters = [serialize_type(p) for p in t.parameters.values()]
+        parameters = [
+            from_type(p) for p in t.parameters.values()]
 
         return {
             'parameters': parameters,
-            'return': serialize_type(t.return_annotation),
+            'return': from_type(t.return_annotation,
+                                                    interpret_none_as_void=True),
             'schemaType': 'Function',
             'type': 'Schema',
         }
@@ -37,14 +54,14 @@ def serialize_type(t):
             'name': t.name,
             'schemaType': 'NamedSchema',
             'type': 'Schema',
-            'value': serialize_type(t.annotation),
+            'value': from_type(t.annotation),
         }
 
     # Checking if this is a generic type. If so, what type of generic
     # is this?
 
-    if _is_list(t):
-        elements = [serialize_type(x) for x in t.__args__]
+    if _is_type_list(t):
+        elements = [from_type(x) for x in t.__args__]
 
         return {
             'elements': elements,
@@ -63,6 +80,13 @@ def _create_schema_primitive(name):
     }
 
 
+def _create_schema_void():
+    return {
+        'scheaType': 'Void',
+        'type': 'Schema',
+    }
+
+
 def _create_schema_unresolved(reason):
     return {
         'reasonForUnresolved': reason,
@@ -71,15 +95,23 @@ def _create_schema_unresolved(reason):
     }
 
 
-def _is_empty(t):
+def _is_val_primitive(v):
+    return any([type(v) is t for t in _T_PRIMITIVES.values()])
+
+
+def _is_type_primitive(t):
+    return any(t is _t for _t in _T_PRIMITIVES.values())
+
+
+def _is_type_empty(t):
     return isinstance(t, inspect._empty) or t is inspect.Signature.empty
 
 
-def _is_iterable(t):
+def _is_type_iterable(t):
     return hasattr(t, '__iter__')
 
 
-def _is_list(t):
+def _is_type_list(t):
     return _get_tgeneric(t) is list
 
 
