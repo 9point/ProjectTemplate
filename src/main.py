@@ -56,7 +56,6 @@ def tasks_ls(commands):
 
 def workflows_ls(commands):
     if len(commands) > 0:
-        print(command)
         print('Error: Invalid cli command.')
         exit(1)
 
