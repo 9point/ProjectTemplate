@@ -43,6 +43,27 @@ Some requirements for tasks:
 When defining a task, that task is given a name and semver version. The name
 of the task must be unique among all tasks and workflows across the project.
 
+## Task Unique Identifier
+
+Every task can be uniquely identifier in one of two ways. Depending on the
+particular context you are running, usually one of the identifiers are
+more convenient to use.
+
+- Using the task name and version: `{task-name}:{task-version}`. Note that
+  this identification only works in the context of a particular project, since
+  there can be another task with the same name and version in a different
+  project. To globally qualify across all projects, you can define the
+  task as follows: `{project-name}:{task-name}:{task-version}`. Note also that
+  in some contexts, just the task name is enough. When this identifier is used,
+  the system will do its best to fill in the missing information from the
+  runtime context. If more information than needed is given (such as including
+  the project name when the project name is already known), then that is fine,
+  as long as the information is correct (providing the incorrect project name
+  for a runtime where the project name is already known will result in an
+  identification failure).
+
+- Use the database id for the task. All database ids are globally unique.
+
 ## Define a Multi-Unit Task
 
 TODO: Take a deeper look into the python multi-threading api. Would like

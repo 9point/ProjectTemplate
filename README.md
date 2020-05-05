@@ -16,6 +16,15 @@ are as follows:
 - Work should be reproducible. When running an expensive task a second time,
   there is no need to redo the computations.
 
+## Installation and Setup
+
+- [Python](https://www.python.org/downloads/) version 3.7.4 or later
+- [Nose](https://nose.readthedocs.io/en/latest/).
+- [Taskfile](https://taskfile.dev/#/installation)
+
+For CLI commands associated with this project, look at the documentation
+[here](./docs/CLI.md).
+
 ## Docs
 
 The full documentation is [here](./docs/README.md).

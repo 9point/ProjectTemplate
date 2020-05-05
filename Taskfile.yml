@@ -1,0 +1,25 @@
+version: "2"
+
+vars:
+  PY_MAIN: ./src/main.py
+
+tasks:
+  t:
+    ls:
+      cmds:
+        - python {{.PY_MAIN}} tasks-ls
+
+  tasks:
+    ls:
+      cmds:
+        - python {{.PY_MAIN}} tasks-ls
+
+  wf:
+    ls:
+      cmds:
+        - python {{.PY_MAIN}} workflows-ls
+
+  workflows:
+    ls:
+      cmds:
+        - python {{.PY_MAIN}} workflows-ls

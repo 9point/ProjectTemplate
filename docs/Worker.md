@@ -28,10 +28,6 @@ When a worker is started, the following happens:
 
 ## Worker Statuses
 
-## Persistent vs Ephemeral Workers
-
-A [Worker](./Worker.md) is some process associated with a project
-
 ## Running a Routine without a Worker
 
 ```bash
