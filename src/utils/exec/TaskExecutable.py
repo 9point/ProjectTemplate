@@ -1,3 +1,6 @@
+from utils.RoutineID import RoutineID
+
+
 class TaskExecutable:
     """
     Represents the code that executes a task. Running the code will cause the
@@ -12,5 +15,9 @@ class TaskExecutable:
         self.run = run
         self.version = version
 
+    @property
+    def routine_id(self):
+        return RoutineID(project_name=None, routine_name=self.name, version=self.version)
+
     def __call__(self, *args, **kwargs):
-        return self.engine.execute_task(*args, **kwargs)
+        pass

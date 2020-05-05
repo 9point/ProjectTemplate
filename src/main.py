@@ -6,6 +6,9 @@ from glove_classifier import build as build_glove_classifier
 from utils import lifecycle
 from utils.task_mgr import get_workflows, InvalidWorkflowName, register_workflows, run_workflow
 
+_IMAGE_NAME = os.environ.get('IMAGE_NAME')
+_PROJECT_NAME = os.environ.get('PROJECT_NAME')
+
 
 def register(commands):
     if len(commands) > 0:
@@ -46,12 +49,23 @@ def start(commands):
     print(f'Worker running: {worker.id}')
 
 
+def info(commands):
+    if len(commands) > 0:
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    print(f'Project Name: {_PROJECT_NAME}')
+    print(f'Image Name: {_IMAGE_NAME}')
+
+
 def tasks_ls(commands):
     if len(commands) > 0:
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('TODO: Listing tasks')
+    for executable in lifecycle.get_task_execs():
+        routine_id = executable.routine_id
+        print(routine_id.routine_name, '\t', routine_id.version)
 
 
 def workflows_ls(commands):
@@ -59,15 +73,13 @@ def workflows_ls(commands):
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('TODO: Listing workflows')
+    for executable in lifecycle.get_workflow_execs():
+        routine_id = executable.routine_id
+        print(routine_id.routine_name)
 
 
 if __name__ == '__main__':
     register_workflows([build_bow_classifier, build_glove_classifier])
-
-    for wf in get_workflows():
-        print(wf.name)
-        print(wf.call_graph)
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')
@@ -82,11 +94,18 @@ if __name__ == '__main__':
     domain = commands[0]
 
     routines = {
+        'info': info,
         'register': register,
         'run': run,
         'start': start,
         'tasks ls': tasks_ls,
+        'task ls': tasks_ls,
+        't ls': tasks_ls,
+        'ts ls': tasks_ls,
         'workflows ls': workflows_ls,
+        'workflow ls': workflows_ls,
+        'wf ls': workflows_ls,
+        'wfs ls': workflows_ls,
     }
 
     found_match = False

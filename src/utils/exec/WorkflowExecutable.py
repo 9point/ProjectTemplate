@@ -1,3 +1,4 @@
+from utils.RoutineID import RoutineID
 
 
 class WorkflowExecutable:
@@ -13,5 +14,9 @@ class WorkflowExecutable:
         self.name = name
         self.run = run
 
+    @property
+    def routine_id(self):
+        return RoutineID(project_name=None, routine_name=self.name, version=None)
+
     def __call__(self, *args, **kwargs):
-        self.engine.execute_workflow(*args, **kwargs)
+        pass

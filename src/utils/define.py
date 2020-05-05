@@ -6,10 +6,10 @@ from utils.exec.WorkflowExecutable import WorkflowExecutable
 def workflow(name):
 
     def inner(func):
-        wf = WorkflowExecutable(name, func)
-        lifecycle.register_workflow_executable(wf)
+        wf_exec = WorkflowExecutable(name, func)
+        lifecycle.register_workflow_exec(wf_exec)
 
-        return wrap_workflow_exec(wf)
+        return wrap_workflow_exec(wf_exec)
 
     return inner
 
@@ -17,10 +17,10 @@ def workflow(name):
 def task(name, version):
 
     def inner(func):
-        task = TaskExecutable(name, func.__doc__, version, func)
-        lifecycle.register_task_executable(task)
+        task_exec = TaskExecutable(name, func.__doc__, version, func)
+        lifecycle.register_task_exec(task_exec)
 
-        return wrap_task_exec(task)
+        return wrap_task_exec(task_exec)
 
     return inner
 

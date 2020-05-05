@@ -5,6 +5,7 @@ from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr, worker_thread
 from utils.lifecycle.Connection import Connection
+from utils.lifecycle.ExecutableRegistry import ExecutableRegistry
 from utils.lifecycle.Logger import Logger
 from utils.lifecycle.TaskRunner import TaskRunner
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
@@ -16,6 +17,7 @@ _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 _CONNECTION = None
 _ENGINE = None
+_EXECUTABLE_REGISTRY = ExecutableRegistry()
 _LOGGER = None
 _TASK_RUNNER = None
 _WORKER_SUBSCRIPTIONS = []
@@ -89,12 +91,24 @@ def register_worker():
     return worker
 
 
-def register_task_executable(task_exec):
-    pass
+def register_task_exec(task_exec):
+    global _EXECUTABLE_REGISTRY
+    _EXECUTABLE_REGISTRY.add_task_exec(task_exec)
 
 
-def register_workflow_executable(wf_exec):
-    pass
+def get_task_execs():
+    global _EXECUTABLE_REGISTRY
+    return _EXECUTABLE_REGISTRY.task_execs
+
+
+def register_workflow_exec(wf_exec):
+    global _EXECUTABLE_REGISTRY
+    _EXECUTABLE_REGISTRY.add_workflow_exec(wf_exec)
+
+
+def get_workflow_execs():
+    global _EXECUTABLE_REGISTRY
+    return _EXECUTABLE_REGISTRY.workflow_execs
 
 
 def run_workflow(workflow_name):
