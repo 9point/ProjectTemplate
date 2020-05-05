@@ -6,6 +6,8 @@ DOCKERFILE=Dockerfile
 PROJECT_NAME=news-classifier
 IMAGE_NAME=9point/ml-project-${PROJECT_NAME}
 
+MAIN_PY=./src/main.py
+
 .PHONY: protoc
 protoc:
 	bash scripts/protoc.sh
@@ -24,4 +26,11 @@ build_base_docker:
 start_workflow:
 	IMAGE_NAME=${IMAGE_NAME} PROJECT_NAME=${PROJECT_NAME} WORKFLOW_NAME=${WORKFLOW_NAME} \
 	bash scripts/start_workflow.sh
-	
+
+.PHONY: tasks_ls
+tasks_ls:
+	python ${MAIN_PY} tasks-ls
+
+.PHONY: workflows_ls
+workflows_ls:
+	python ${MAIN_PY} workflows-ls

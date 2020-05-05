@@ -1,12 +1,12 @@
 import asyncio
 
 from bow_classifier.train import main as _train
-from typing import Any, List, TypedDict
+from typing import Any, List
 from utils import define
 from utils.types import PyTorchModule
 
 Data = Any
-HyperParams = TypedDict('HyperParams', lr=float)
+HyperParams = Any
 Model = PyTorchModule
 
 

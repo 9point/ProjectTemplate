@@ -7,17 +7,16 @@ from utils import lifecycle
 from utils.task_mgr import get_workflows, InvalidWorkflowName, register_workflows, run_workflow
 
 
-def start(commands):
+def register(commands):
     if len(commands) > 0:
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('Starting worker...')
+    print('Registering Project...')
     lifecycle.start_connection()
-    lifecycle.start_worker()
-    worker = lifecycle.register_worker()
+    project = lifecycle.register_project()
 
-    print(f'Worker running: {worker.id}')
+    print(f'Project registered: {project.id}')
 
 
 def run(commands):
@@ -34,16 +33,34 @@ def run(commands):
     print(f'WorkflowRun ID: {workflow_run.id}')
 
 
-def register(commands):
+def start(commands):
     if len(commands) > 0:
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('Registering Project...')
+    print('Starting worker...')
     lifecycle.start_connection()
-    project = lifecycle.register_project()
+    lifecycle.start_worker()
+    worker = lifecycle.register_worker()
 
-    print(f'Project registered: {project.id}')
+    print(f'Worker running: {worker.id}')
+
+
+def tasks_ls(commands):
+    if len(commands) > 0:
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    print('TODO: Listing tasks')
+
+
+def workflows_ls(commands):
+    if len(commands) > 0:
+        print(command)
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    print('TODO: Listing workflows')
 
 
 if __name__ == '__main__':
@@ -69,9 +86,21 @@ if __name__ == '__main__':
         'register': register,
         'run': run,
         'start': start,
+        'tasks ls': tasks_ls,
+        'workflows ls': workflows_ls,
     }
 
-    if domain not in routines:
-        print(f'Error: Unrecognized command: "{domain}"')
+    found_match = False
 
-    routines[domain](commands[1:])
+    for key, func in routines.items():
+        target = key.split()
+        found_match = all(
+            [x == y for x, y in zip(target, commands[:len(target)])])
+
+        if found_match:
+            func(commands[len(target):])
+            break
+
+    if not found_match:
+        print(f'Error: Unrecognized command: "{domain}"')
+        exit(1)

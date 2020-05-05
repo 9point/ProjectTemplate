@@ -33,7 +33,7 @@ def wrap_task_exec(executable):
     return coro
 
 
-def wrap_workflow_func(executable):
+def wrap_workflow_exec(executable):
     async def coro(*args, **kwargs):
         executable.set_engine(lifecycle.engine())
         return executable(*args, **kwargs)

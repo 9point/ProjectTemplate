@@ -89,11 +89,11 @@ def register_worker():
     return worker
 
 
-def register_task_exec(task_exec):
+def register_task_executable(task_exec):
     pass
 
 
-def register_workflow_exec(wf_exec):
+def register_workflow_executable(wf_exec):
     pass
 
 
