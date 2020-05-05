@@ -15,6 +15,8 @@ The following are all the directives being sent between worker and service:
 
 `v1.log`
 
+`v1.task.starting`
+
 **From Service**
 
 `v1.heartbeat.check_pulse`
