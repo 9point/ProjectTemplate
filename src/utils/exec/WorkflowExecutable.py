@@ -2,12 +2,6 @@ from utils.RoutineID import RoutineID
 
 
 class WorkflowExecutable:
-    """
-    Represents the code that defines a Workflow. Executing this code within the
-    right environment will generate an AST which can be used to define the
-    workflow.
-    """
-
     def __init__(self, name, run, is_coroutine):
         self.e_type = 'Workflow'
 

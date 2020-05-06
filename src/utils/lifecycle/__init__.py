@@ -80,7 +80,7 @@ def register_project():
     global _CONNECTION
 
     assert(_CONNECTION is not None)
-    return _CONNECTION.register_project()
+    return _CONNECTION.register_project(_EXECUTABLE_REGISTRY)
 
 
 def register_worker():

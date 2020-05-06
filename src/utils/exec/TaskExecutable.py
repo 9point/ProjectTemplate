@@ -2,11 +2,6 @@ from utils.RoutineID import RoutineID
 
 
 class TaskExecutable:
-    """
-    Represents the code that executes a task. Running the code will cause the
-    task to start running.
-    """
-
     def __init__(self, name, doc, version, run, is_coroutine):
         self.e_type = 'Task'
 

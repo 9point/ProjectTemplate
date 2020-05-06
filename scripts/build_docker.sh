@@ -25,21 +25,3 @@ fi
 docker build --file ${DOCKERFILE} -t "$IMAGE_TAG_WITH_SHA" -t "$IMAGE_NAME:latest" --build-arg IMAGE_TAG="${IMAGE_TAG_WITH_SHA}" .
 echo "${IMAGE_TAG_WITH_SHA} built locally."
 
-if [ -n "${DOCKER_REGISTRY_PASSWORD}" ]; then
-  docker login --username="$DOCKER_REGISTRY_USERNAME" --password="$DOCKER_REGISTRY_PASSWORD"
-fi
-
-docker tag "$IMAGE_TAG_WITH_SHA" "${IMAGE_TAG_WITH_SHA}"
-
-docker push "${IMAGE_TAG_WITH_SHA}"
-docker push "${IMAGE_NAME}:latest"
-echo "${IMAGE_TAG_WITH_SHA} pushed to remote."
-
-# If the current commit has a semver tag, also push the images with the semver tag
-if [ -n "$RELEASE_SEMVER" ]; then
-
-  docker tag "$IMAGE_TAG_WITH_SHA" "${IMAGE_TAG_WITH_SEMVER}"
-  docker push "${IMAGE_TAG_WITH_SEMVER}"
-  echo "${IMAGE_TAG_WITH_SEMVER} pushed to remote."
-
-fi
