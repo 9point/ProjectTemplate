@@ -25,10 +25,6 @@ are as follows:
 For CLI commands associated with this project, look at the documentation
 [here](./docs/CLI.md).
 
-## Docs
-
-The full documentation is [here](./docs/README.md).
-
 ## GRPC
 
 The protobuf definitions are copied from the ML API Service code. The ML API Service
