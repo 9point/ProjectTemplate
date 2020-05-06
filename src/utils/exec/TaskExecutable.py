@@ -7,8 +7,11 @@ class TaskExecutable:
     task to start running.
     """
 
-    def __init__(self, name, doc, version, run):
+    def __init__(self, name, doc, version, run, is_coroutine):
         self.e_type = 'Task'
+
+        self._engine = None
+        self.is_coroutine = is_coroutine
 
         self.doc = doc
         self.name = name
@@ -19,5 +22,9 @@ class TaskExecutable:
     def routine_id(self):
         return RoutineID(project_name=None, routine_name=self.name, version=self.version)
 
-    def __call__(self, *args, **kwargs):
-        pass
+    def set_engine(self, engine):
+        self._engine = engine
+
+    async def __call__(self, *args, **kwargs):
+        assert(self._engine is not None)
+        return await self._engine.exec_task(self, *args, **kwargs)

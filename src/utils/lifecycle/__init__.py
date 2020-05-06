@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr, worker_thread
+from utils.exec.Engine import LocalRunEngine
 from utils.lifecycle.Connection import Connection
 from utils.lifecycle.ExecutableRegistry import ExecutableRegistry
 from utils.lifecycle.Logger import Logger
@@ -21,6 +22,16 @@ _EXECUTABLE_REGISTRY = ExecutableRegistry()
 _LOGGER = None
 _TASK_RUNNER = None
 _WORKER_SUBSCRIPTIONS = []
+
+
+def is_service_logger_running():
+    global _LOGGER
+    return _LOGGER is not None
+
+
+def start_local_job():
+    global _ENGINE
+    _ENGINE = LocalRunEngine()
 
 
 def start_worker():
@@ -73,6 +84,7 @@ def register_project():
 
 
 def register_worker():
+    # TODO: Set engine.
     global _CONNECTION
     global _TASK_RUNNER
 

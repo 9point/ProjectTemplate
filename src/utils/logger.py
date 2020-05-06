@@ -5,17 +5,18 @@ from utils import lifecycle
 
 
 def write(*args):
-    workflow_run_id = lifecycle.workflow_run_id()
 
-    # TODO: Should let the logger setup the workflow run id.
-    assert(workflow_run_id is not None)
+    if lifecycle.is_service_logger_running():
+        workflow_run_id = lifecycle.workflow_run_id()
+        # TODO: Should let the logger setup the workflow run id.
+        assert(workflow_run_id is not None)
 
-    content = ' '.join(args)
-    payload = {'content': content,
-               'logType': 'messageSend',
-               'workflowRunID': workflow_run_id}
+        content = ' '.join(args)
+        payload = {'content': content,
+                   'logType': 'messageSend',
+                   'workflowRunID': workflow_run_id}
 
-    lifecycle.log(payload)
+        lifecycle.log(payload)
 
     print(*args)
 
@@ -30,6 +31,9 @@ class _ProgressBar:
         self.name = name
 
     def set_progress(self, decimal):
+        if not lifecycle.is_service_logger_running():
+            return
+
         if decimal < 0 or decimal > 1:
             raise InvalidProgressValue()
 
@@ -47,6 +51,9 @@ class _ProgressBar:
         lifecycle.log(payload)
 
     def show(self):
+        if not lifecycle.is_service_logger_running():
+            return
+
         workflow_run_id = lifecycle.workflow_run_id()
 
         # TODO: Should let the logger setup the workflow run id.

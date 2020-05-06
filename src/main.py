@@ -1,7 +1,8 @@
 import argparse
+import asyncio
 import os
 
-from bow_classifier import train as build_bow_classifier
+from bow_classifier import build as build_bow_classifier
 from glove_classifier import build as build_glove_classifier
 from utils import lifecycle
 from utils.task_mgr import get_workflows, InvalidWorkflowName, register_workflows, run_workflow
@@ -78,6 +79,16 @@ def workflows_ls(commands):
         print(routine_id.routine_name)
 
 
+def tmp(commands):
+    async def run():
+        lifecycle.start_local_job()
+        hyperparams = [dict(lr=0.1), dict(lr=0.01), dict(lr=0.001)]
+        model = await build_bow_classifier(epochs=2, hyperparams=hyperparams)
+        print('Done building bow classifier')
+
+    asyncio.run(run())
+
+
 if __name__ == '__main__':
     register_workflows([build_bow_classifier, build_glove_classifier])
 
@@ -94,6 +105,7 @@ if __name__ == '__main__':
     domain = commands[0]
 
     routines = {
+        'tmp': tmp,
         'info': info,
         'register': register,
         'run': run,

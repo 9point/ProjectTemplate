@@ -9,7 +9,6 @@
 
 - [API Service](./API-Service.md)
 - [Container Image](./API-Image.md)
-- [Routine Discovery](./Routine-Discovery.md)
 - [Task](./Task.md)
 - [Unit](./Unit.md)
 - [Worker](./Worker.md)
@@ -24,4 +23,6 @@
 
 **Ideas for Later**
 
+- [Routine Discovery](./Routine-Discovery.md)
+- [Routine Triggers](./Routine-Triggers.md)
 - [Network Designer](./Network-Designer.md)

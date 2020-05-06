@@ -27,6 +27,16 @@ use the task, you must execute it as follows:
 sorted_list = await sort([3, 2, 1])
 ```
 
+One thing to observe in the above example is that even though the `sort`
+task was defined as a normal function, it is used as a python
+[coroutine](https://docs.python.org/3/library/asyncio-task.html). You can
+define tasks as normal functions or co-routines (async keyword), and they will
+always be turned into co-routines when you apply the `@define.task` decorator.
+The reason is because we do not know the context in which the task will get
+run. It could be the case that we call the `sort` function and system decides
+to send the task off to another remote worker to be completed. This is a
+decision made depending on the runtime.
+
 Some requirements for tasks:
 
 - The task should block until it is complete. When the task returns, the

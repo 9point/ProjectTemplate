@@ -1,3 +1,5 @@
+import inspect
+
 from utils import lifecycle
 from utils.exec.TaskExecutable import TaskExecutable
 from utils.exec.WorkflowExecutable import WorkflowExecutable
@@ -6,7 +8,9 @@ from utils.exec.WorkflowExecutable import WorkflowExecutable
 def workflow(name):
 
     def inner(func):
-        wf_exec = WorkflowExecutable(name, func)
+        is_coroutine = inspect.iscoroutinefunction(func)
+
+        wf_exec = WorkflowExecutable(name, func, is_coroutine)
         lifecycle.register_workflow_exec(wf_exec)
 
         return wrap_workflow_exec(wf_exec)
@@ -17,7 +21,10 @@ def workflow(name):
 def task(name, version):
 
     def inner(func):
-        task_exec = TaskExecutable(name, func.__doc__, version, func)
+        is_coroutine = inspect.iscoroutinefunction(func)
+
+        task_exec = TaskExecutable(
+            name, func.__doc__, version, func, is_coroutine)
         lifecycle.register_task_exec(task_exec)
 
         return wrap_task_exec(task_exec)
@@ -27,15 +34,19 @@ def task(name, version):
 
 def wrap_task_exec(executable):
     async def coro(*args, **kwargs):
-        executable.set_engine(lifecycle.engine())
-        return executable(*args, **kwargs)
+        engine = lifecycle.engine()
+        assert(engine is not None)
+        executable.set_engine(engine)
+        return await executable(*args, **kwargs)
 
     return coro
 
 
 def wrap_workflow_exec(executable):
     async def coro(*args, **kwargs):
-        executable.set_engine(lifecycle.engine())
-        return executable(*args, **kwargs)
+        engine = lifecycle.engine()
+        assert(engine is not None)
+        executable.set_engine(engine)
+        return await executable(*args, **kwargs)
 
     return coro
