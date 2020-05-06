@@ -20,8 +20,11 @@ class LocalRunEngine:
         else:
             results = task_exec.run(*args, **kwargs)
 
-        if self.enable_storage:
-            _write(task_exec, results)
+        # TODO: Need to store results based on the input parameters to the
+        # task as well. May need the service's help with generating some
+        # hash / identifier for the task, version, and input parameters.
+        # if self.enable_storage:
+        #     _write(task_exec, results)
 
         return results
 

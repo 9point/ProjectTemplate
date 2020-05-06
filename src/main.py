@@ -84,7 +84,6 @@ def tmp(commands):
         lifecycle.start_local_job()
         hyperparams = [dict(lr=0.1), dict(lr=0.01), dict(lr=0.001)]
         model = await build_bow_classifier(epochs=2, hyperparams=hyperparams)
-        print('Done building bow classifier')
 
     asyncio.run(run())
 
