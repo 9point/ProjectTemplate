@@ -17,7 +17,7 @@ class RoutineID:
         self.version = version
 
     @staticmethod
-    def from_string(str_id):
+    def parse(str_id):
         tokens = str_id.split(':')
 
         rtype = tokens[0]
@@ -35,12 +35,10 @@ class RoutineID:
             version = tokens[3]
 
         if len(tokens) == 3:
-            project_name = None
-            routine_name = tokens[1]
-            version = tokens[2]
+            project_name = tokens[1]
+            routine_name = tokens[2]
+            version = None
 
-        # TODO: Want to add support for database ids here. Would need
-        # to disambiguate if this token is that of a db id or a routine name.
         if len(tokens) == 2:
             project_name = None
             routine_name = tokens[1]
@@ -73,3 +71,19 @@ class RoutineID:
             or other.version is None
             or self.version == other.version
         )
+
+    def __str__(self):
+        if self.rtype == 'db':
+            return f'db:{self.dbid}'
+
+        str_id = self.rtype
+
+        if self.project_name is not None:
+            str_id += f':{self.project_name}'
+
+        str_id += f':{self.routine_name}'
+
+        if self.version is not None:
+            str_id += f':{self.version}'
+
+        return str_id

@@ -46,3 +46,7 @@ register:
 start_workflow:
 	IMAGE_NAME=${IMAGE_NAME} PROJECT_NAME=${PROJECT_NAME} WORKFLOW_NAME=${WORKFLOW_NAME} \
 	bash scripts/start_workflow.sh
+
+.PHONY: test
+test:
+	nosetests src

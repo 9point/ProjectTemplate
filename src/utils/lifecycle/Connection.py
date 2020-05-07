@@ -7,6 +7,7 @@ from utils.lifecycle.DirectiveStreamer import DirectiveStreamer
 from utils.models.Project import Project
 from utils.models.Worker import Worker
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
+from utils.RoutineID import RoutineID
 
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
 _IMAGE_NAME = os.environ.get('IMAGE_NAME')
@@ -85,7 +86,7 @@ class Connection:
         self._project = Project.from_grpc_message(project_proto)
         return self._project
 
-    def register_worker(self):
+    def register_worker(self, executable_registry):
         """
         Registers the worker with the API Service. This will let the API
         Service that this worker is ready and connected so it can receive
@@ -107,8 +108,13 @@ class Connection:
 
         # Register the worker with the api.
 
+        execs = executable_registry.task_execs + executable_registry.workflow_execs
+        str_ids = [str(e.routine_id) for e in execs]
+        routines_str = '|'.join(str_ids)
+
         request_register_worker = mlservice_pb2.Req_RegisterWorker(
-            project_id=project_proto.id)
+            project_id=project_proto.id,
+            routines=routines_str)
 
         worker_proto = stub.RegisterWorker(request_register_worker)
 

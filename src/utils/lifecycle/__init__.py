@@ -90,7 +90,7 @@ def register_worker():
 
     assert(_CONNECTION is not None)
 
-    worker = _CONNECTION.register_worker()
+    worker = _CONNECTION.register_worker(_EXECUTABLE_REGISTRY)
 
     _CONNECTION.on_directive('v1.task.request_start',
                              _on_request_task_start)
