@@ -4,7 +4,14 @@ _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 
 class RoutineID:
-    def __init__(self, project_name, routine_name, version):
+    def __init__(self,
+                 rtype,
+                 dbid=None,
+                 project_name=None,
+                 routine_name=None,
+                 version=None):
+        self.rtype = rtype
+        self.dbid = dbid
         self.project_name = project_name
         self.routine_name = routine_name
         self.version = version
@@ -13,41 +20,56 @@ class RoutineID:
     def from_string(str_id):
         tokens = str_id.split(':')
 
-        assert(len(tokens) in [1, 2, 3])
+        rtype = tokens[0]
+        assert(rtype in ['db', 'tname', 'wfname'])
+
+        if rtype == 'db':
+            assert(len(tokens) == 2)
+            return RoutineID(rtype=rtype, dbid=tokens[1])
+
+        assert(len(tokens) in [2, 3, 4])
+
+        if len(tokens) == 4:
+            project_name = tokens[1]
+            routine_name = tokens[2]
+            version = tokens[3]
 
         if len(tokens) == 3:
-            project_name = tokens[0]
+            project_name = None
             routine_name = tokens[1]
             version = tokens[2]
 
-        if len(tokens) == 2:
-            project_name = None
-            routine_name = tokens[0]
-            version = tokens[1]
-
         # TODO: Want to add support for database ids here. Would need
         # to disambiguate if this token is that of a db id or a routine name.
-        if len(tokens) == 1:
+        if len(tokens) == 2:
             project_name = None
-            routine_name = tokens[0]
+            routine_name = tokens[1]
             version = None
 
-        return RoutineID(project_name, routine_name, version)
+        return RoutineID(rtype=rtype,
+                         project_name=project_name,
+                         routine_name=routine_name,
+                         version=version)
 
     def is_match(self, other):
-        project1 = _PROJECT_NAME if self.project_name is None else self.project_name
-        project2 = _PROJECT_NAME if other.project_name is None else other.project_name
-
-        if project1 != project2:
+        if self.rtype != other.rtype:
             return False
 
-        routine1 = self.routine_name
-        routine2 = other.routine_name
+        if self.rtype == 'db':
+            return self.dbid == other.dbid
 
-        if routine1 != routine2:
+        if (
+                self.project_name is not None
+                and other.project_name is not None
+                and self.project_name != other.project_name
+        ):
             return False
 
-        if any([v is None for v in [self.version, other.version]]):
-            return True
+        if self.routine_name != other.routine_name:
+            return False
 
-        return self.version == other.version
+        return (
+            self.version is None
+            or other.version is None
+            or self.version == other.version
+        )

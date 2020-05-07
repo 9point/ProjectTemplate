@@ -15,7 +15,10 @@ class TaskExecutable:
 
     @property
     def routine_id(self):
-        return RoutineID(project_name=None, routine_name=self.name, version=self.version)
+        return RoutineID(rtype='tname',
+                         project_name=None,
+                         routine_name=self.name,
+                         version=self.version)
 
     def set_engine(self, engine):
         self._engine = engine
