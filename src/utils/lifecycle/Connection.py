@@ -75,6 +75,7 @@ class Connection:
 
         request_register_container_image = mlservice_pb2.Req_RegisterContainerImage(name=_IMAGE_NAME,
                                                                                     project_id=project_proto.id,
+                                                                                    protocol='v1.python',
                                                                                     task_ids=task_ids,
                                                                                     workflow_ids=workflow_ids)
 
