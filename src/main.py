@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import os
+import simple_example
 
 from bow_classifier import build as build_bow_classifier
 from glove_classifier import build as build_glove_classifier
@@ -82,8 +83,8 @@ def workflows_ls(commands):
 def tmp(commands):
     async def run():
         lifecycle.start_local_job()
-        hyperparams = [dict(lr=0.1), dict(lr=0.01), dict(lr=0.001)]
-        model = await build_bow_classifier(epochs=2, hyperparams=hyperparams)
+        model = await simple_example.build()
+        print(model)
 
     asyncio.run(run())
 
