@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr, worker_thread
-from utils.exec.Engine import LocalRunEngine
+from utils.engine.local_run_engine import LocalRunEngine
 from utils.lifecycle.Connection import Connection
 from utils.lifecycle.ExecutableRegistry import ExecutableRegistry
 from utils.lifecycle.Logger import Logger
