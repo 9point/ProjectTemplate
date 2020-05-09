@@ -49,7 +49,16 @@ class DirectiveStreamer:
         self._send_buffer.append(directive_request)
 
     def on(self, payload_key, cb):
-        self._listeners.append({'payload_key': payload_key, 'cb': cb})
+        payload = {'payload_key': payload_key, 'cb': cb}
+        self._listeners.append(payload)
+
+        def stop():
+            if payload not in self._listeners:
+                return
+
+            self._listeners.remove(payload)
+
+        return stop
 
     def _create_stub(self):
         return mlservice_pb2_grpc.MLStub(self._channel)

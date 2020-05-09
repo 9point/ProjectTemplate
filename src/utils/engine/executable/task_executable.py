@@ -1,11 +1,11 @@
-from utils.RoutineID import RoutineID
+from ...RoutineID import RoutineID
 
 
 class TaskExecutable:
-    def __init__(self, name, doc, version, run, is_coroutine):
+    def __init__(self, name, doc, version, run, is_coroutine, get_engine):
         self.e_type = 'Task'
 
-        self._engine = None
+        self.get_engine = get_engine
         self.is_coroutine = is_coroutine
 
         self.doc = doc
@@ -20,9 +20,7 @@ class TaskExecutable:
                          routine_name=self.name,
                          version=self.version)
 
-    def set_engine(self, engine):
-        self._engine = engine
-
     async def __call__(self, *args, **kwargs):
-        assert(self._engine is not None)
-        return await self._engine.exec_task(self, *args, **kwargs)
+        engine = self.get_engine()
+        assert(engine is not None)
+        return await engine.run_executable(self, *args, **kwargs)

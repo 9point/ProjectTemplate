@@ -1,11 +1,11 @@
-from utils.RoutineID import RoutineID
+from ...RoutineID import RoutineID
 
 
 class WorkflowExecutable:
-    def __init__(self, name, run, is_coroutine):
+    def __init__(self, name, run, is_coroutine, get_engine):
         self.e_type = 'Workflow'
 
-        self._engine = None
+        self.get_engine = get_engine
         self.is_coroutine = is_coroutine
 
         self.name = name
@@ -18,9 +18,7 @@ class WorkflowExecutable:
                          routine_name=self.name,
                          version=None)
 
-    def set_engine(self, engine):
-        self._engine = engine
-
     async def __call__(self, *args, **kwargs):
-        assert(self._engine is not None)
-        return await self._engine.exec_workflow(self, *args, **kwargs)
+        engine = self.get_engine()
+        assert(engine is not None)
+        return await engine.run_executable(self, *args, **kwargs)

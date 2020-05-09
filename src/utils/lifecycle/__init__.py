@@ -29,9 +29,17 @@ def is_service_logger_running():
     return _LOGGER is not None
 
 
-def start_local_job():
+def start_local_routine(executable, *args, **kwargs):
     global _ENGINE
+
+    assert _ENGINE is None
+
+    print('starting local routine')
+
     _ENGINE = LocalRunEngine()
+
+    print('done starting engine, running exec')
+    return _ENGINE.start(executable, *args, **kwargs)
 
 
 def start_worker():

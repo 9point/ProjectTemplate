@@ -81,12 +81,8 @@ def workflows_ls(commands):
 
 
 def tmp(commands):
-    async def run():
-        lifecycle.start_local_job()
-        model = await simple_example.build()
-        print(model)
-
-    asyncio.run(run())
+    model = lifecycle.start_local_routine(simple_example.build)
+    print(model)
 
 
 if __name__ == '__main__':

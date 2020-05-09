@@ -146,7 +146,7 @@ class Connection:
         return stub.RunWorkflow(request)
 
     def on_directive(self, payload_key, cb):
-        self._directive_streamer.on(payload_key, cb)
+        return self._directive_streamer.on(payload_key, cb)
 
     def send_directive(self, payload_key, payload):
         assert(self._worker is not None)
