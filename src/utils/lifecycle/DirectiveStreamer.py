@@ -1,3 +1,4 @@
+import queue
 import threading
 import time
 
@@ -14,10 +15,19 @@ class DirectiveStreamer:
         self._channel = channel
         self._is_running = False
         self._listeners = []
-        self._send_buffer = []
+        self._send_buffer = queue.Queue()
         self._worker = worker
 
     def start(self):
+        # Should not start the directive streamer on the main thread.
+        thread = threading.Thread(target=self._start)
+        thread.start()
+
+    def stop(self):
+      # TODO: IMPLEMENT ME
+        assert(False, 'Directive Streamer does not yet handle stop')
+
+    def _start(self):
         assert(not self._is_running)
 
         self._is_running = True
@@ -40,13 +50,9 @@ class DirectiveStreamer:
         # memory issues if the thread has access to itself?
         receiver_thread.start()
 
-    def stop(self):
-      # TODO: IMPLEMENT ME
-        assert(False, 'Directive Streamer does not yet handle will_stop')
-
     def send(self, directive_request):
         assert(self._is_running)
-        self._send_buffer.append(directive_request)
+        self._send_buffer.put(directive_request)
 
     def on(self, payload_key, cb):
         payload = {'payload_key': payload_key, 'cb': cb}
@@ -80,16 +86,6 @@ def _generator(instance):
                                  payload={},
                                  worker_id=instance._worker.id).to_grpc_message()
 
-    loop_secs = 5
-
-    while instance._is_running:
-        if len(instance._send_buffer) > 0:
-            # Copy into local variable then clear buffer. This is more
-            # thread safe.
-            send_buffer = instance._send_buffer[:]
-            instance._send_buffer.clear()
-
-            for request in send_buffer:
-                yield request.to_grpc_message()
-
-        time.sleep(loop_secs)
+    while True:
+        request = instance._send_buffer.get(block=True)
+        yield request.to_grpc_message()

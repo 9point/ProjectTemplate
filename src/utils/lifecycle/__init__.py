@@ -1,15 +1,17 @@
 import grpc
 import os
+import threading
 
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
-from utils import task_mgr, worker_thread
-from utils.engine.local_run_engine import LocalRunEngine
-from utils.lifecycle.Connection import Connection
-from utils.lifecycle.ExecutableRegistry import ExecutableRegistry
-from utils.lifecycle.Logger import Logger
-from utils.lifecycle.TaskRunner import TaskRunner
-from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
+from .Connection import Connection
+from .ExecutableRegistry import ExecutableRegistry
+from .Logger import Logger
+from ..models.WorkerDirectiveRequest import WorkerDirectiveRequest
+from ..engine.local_run_engine import LocalRunEngine
+from ..engine.remote_dispatch_engine import RemoteDispatchEngine
+from ..engine.serializer import deserialize, serialize
+from ..RoutineID import RoutineID
 
 
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
@@ -17,10 +19,10 @@ _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 _CONNECTION = None
+_DIRECTIVE_SUBSCRIPTIONS = []
 _ENGINE = None
 _EXECUTABLE_REGISTRY = ExecutableRegistry()
 _LOGGER = None
-_TASK_RUNNER = None
 _WORKER_SUBSCRIPTIONS = []
 
 
@@ -34,39 +36,24 @@ def start_local_routine(executable, *args, **kwargs):
 
     assert _ENGINE is None
 
-    print('starting local routine')
-
     _ENGINE = LocalRunEngine()
-
-    print('done starting engine, running exec')
     return _ENGINE.start(executable, *args, **kwargs)
 
 
-def start_worker():
+def start_engine():
+    """
+    Starts the engine, which is in charge of running the all the routines.
+    This method does not return unless there is a fatal erro with the engine.
+    """
+
     global _CONNECTION
-    global _LOGGER
-    global _TASK_RUNNER
-    global _WORKER_SUBSCRIPTIONS
+    global _ENGINE
 
-    assert(_CONNECTION is not None)
-    assert(_TASK_RUNNER is None)
+    _ENGINE = RemoteDispatchEngine(_CONNECTION)
+    engine_results_thread = threading.Thread(target=_engine_result_thread)
+    engine_results_thread.start()
 
-    worker_thread.start_thread()
-
-    _TASK_RUNNER = TaskRunner()
-    _LOGGER = Logger()
-
-    _LOGGER.set_connection(_CONNECTION)
-
-    _WORKER_SUBSCRIPTIONS.extend([
-        worker_thread.add_subscriber(_TASK_RUNNER),
-        worker_thread.add_subscriber(_LOGGER),
-    ])
-
-
-def stop_worker():
-    # TODO: IMPLEMENT ME!
-    pass
+    _ENGINE.start()
 
 
 def start_connection():
@@ -92,21 +79,20 @@ def register_project():
 
 
 def register_worker():
-    # TODO: Set engine.
     global _CONNECTION
-    global _TASK_RUNNER
+    global _DIRECTIVE_SUBSCRIPTIONS
 
     assert(_CONNECTION is not None)
 
     worker = _CONNECTION.register_worker(_EXECUTABLE_REGISTRY)
 
-    _CONNECTION.on_directive('v1.task.request_start',
-                             _on_request_task_start)
+    _DIRECTIVE_SUBSCRIPTIONS.extend([
+        _CONNECTION.on_directive('v1.routine.request_start',
+                                 _on_routine_request_start),
 
-    _CONNECTION.on_directive('v1.heartbeat.check_pulse',
-                             _on_heartbeat_check_pulse)
-
-    _TASK_RUNNER.on_task_complete(_on_task_completed)
+        _CONNECTION.on_directive('v1.heartbeat.check_pulse',
+                                 _on_heartbeat_check_pulse),
+    ])
 
     return worker
 
@@ -131,13 +117,6 @@ def get_workflow_execs():
     return _EXECUTABLE_REGISTRY.workflow_execs
 
 
-def run_workflow(workflow_name):
-    global _CONNECTION
-
-    assert(_CONNECTION is not None)
-    return _CONNECTION.run_workflow(workflow_name)
-
-
 def send_directive(payload_key, payload):
     global _CONNECTION
 
@@ -155,48 +134,26 @@ def log(payload):
     _LOGGER.send_log(payload)
 
 
-def workflow_run_id():
-    global _TASK_RUNNER
+def _engine_result_thread():
+    global _ENGINE
 
-    if _TASK_RUNNER is None:
-        return None
+    assert _ENGINE is not None
 
-    return _TASK_RUNNER.active_workflow_run_id
-
-
-def _on_request_task_start(directive):
-    global _CONNECTION
-    global _TASK_RUNNER
-
-    assert(_CONNECTION is not None)
-    assert(_TASK_RUNNER is not None)
-
-    assert('taskName' in directive.payload)
-    assert('workflowRunID' in directive.payload)
-
-    task_name = directive.payload['taskName']
-    workflow_run_id = directive.payload['workflowRunID']
-    _TASK_RUNNER.start_task(task_name, workflow_run_id)
-
-    print('Starting task:')
-    print(f'Task Name: {task_name}')
-    print(f'Workflow Run ID: {workflow_run_id}')
-
-    # TODO: project_id and task_id in payload.
-    payload = {'taskName': task_name}
-    _CONNECTION.send_directive('v1.task.starting', payload)
+    while True:
+        result = _ENGINE.result_queue.get(block=True)
+        print('Finished execution with result:', result)
 
 
 def _on_heartbeat_check_pulse(directive):
     global _CONNECTION
-    global _TASK_RUNNER
+    global _ENGINE
 
-    assert(_CONNECTION is not None)
-    assert(_TASK_RUNNER is not None)
+    assert _CONNECTION is not None
+    assert _ENGINE is not None
 
-    assert('id' in directive.payload)
+    assert 'id' in directive.payload
 
-    status = 'IDLE' if _TASK_RUNNER.active_task_name is None else 'WORKING'
+    status = _ENGINE.status
     print('Sending status:', status)
 
     payload = {'id': directive.payload['id'], 'status': status}
@@ -204,10 +161,42 @@ def _on_heartbeat_check_pulse(directive):
     _CONNECTION.send_directive('v1.heartbeat.give_pulse', payload)
 
 
-def _on_task_completed(task_name, workflow_run_id):
-    if _CONNECTION is None:
-        return
+def _on_routine_request_start(directive):
+    global _CONNECTION
+    global _ENGINE
+    global _EXECUTABLE_REGISTRY
 
-    payload = {'taskName': task_name, 'workflowRunID': workflow_run_id}
-    _CONNECTION.send_directive(
-        payload_key='v1.task.completed', payload=payload)
+    assert _ENGINE is not None
+
+    assert 'routineID' in directive.payload
+    assert 'arguments' in directive.payload
+
+    routine_id = RoutineID.parse(directive.payload['routineID'])
+    executable = _EXECUTABLE_REGISTRY.get_routine(routine_id)
+
+    arguments = deserialize(directive.payload['arguments'])
+    args = arguments['args']
+    kwargs = arguments['kwargs']
+
+    _ENGINE.schedule_executable(executable, *args, **kwargs)
+
+
+def _on_routine_starting(directive):
+    global _CONNECTION
+
+    assert _CONNECTION is not None
+
+    assert 'routineID' in directive.payload
+    assert 'arguments' in directive.payload
+
+    routine_id = directive.payload['routineID']
+
+
+def _on_engine_terminated():
+    global _ENGINE
+
+    assert _ENGINE is not None
+
+    # payload = {'taskName': task_name, 'workflowRunID': workflow_run_id}
+    # _CONNECTION.send_directive(
+    #     payload_key='v1.task.completed', payload=payload)

@@ -25,34 +25,36 @@
 # print(serialize.from_val(None))
 # # print(serialize.from_val(joiner_untyped))
 
-import time
+import asyncio
 import threading
+import time
 import queue
 
-
-class Foo:
-    def __init__(self):
-        self.q = queue.Queue()
-
-    def start(self):
-        a = threading.Thread(target=self._get)
-        b = threading.Thread(target=self._put)
-        a.start()
-        b.start()
-
-    def _get(self):
-        while True:
-            i = self.q.get(block=True)
-            print('Getting', i)
-
-    def _put(self):
-        i = 0
-        while True:
-            time.sleep(1)
-            i += 1
-            self.q.put(i)
-            print('Putting', i)
+q = queue.Queue()
 
 
-foo = Foo()
-foo.start()
+def start_loop(q):
+    print('starting loop')
+    loop = asyncio.new_event_loop()
+    task = loop.create_task(run('main thread', q))
+    loop.run_forever()
+
+
+async def run(message, q):
+    i = 0
+    while True:
+        q.put(f'{message} {i}')
+        i += 1
+        time.sleep(1)
+
+
+def process(q: queue.Queue):
+    while True:
+        message = q.get(block=True)
+        print('Processing message', message)
+
+
+thread = threading.Thread(target=process, args=(q,))
+thread.start()
+
+start_loop(q)

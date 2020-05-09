@@ -14,7 +14,6 @@ _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 
-# TODO: Rename to DirectiveConnection
 class Connection:
     def __init__(self):
         self._channel = None
@@ -126,24 +125,6 @@ class Connection:
         self._directive_streamer.start()
 
         return self._worker
-
-    def run_workflow(self, workflow_name):
-        assert(self._channel is not None)
-
-        stub = self._create_stub()
-
-        # Get the project. Assuming it has already been registered.
-
-        request_get_project = mlservice_pb2.Req_GetProject(name=_PROJECT_NAME)
-        project_proto = stub.GetProject(request_get_project)
-        project = Project.from_grpc_message(project_proto)
-
-        request = mlservice_pb2.Req_RunWorkflow(project_id=project.id,
-                                                workflow_name=workflow_name)
-
-        self._project = project
-
-        return stub.RunWorkflow(request)
 
     def on_directive(self, payload_key, cb):
         return self._directive_streamer.on(payload_key, cb)
