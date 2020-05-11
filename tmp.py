@@ -1,42 +1,58 @@
+# import inspect
+# import typing
+
+# from src.utils.introspection.typing import serialize
+
+
+# def joiner(l: typing.List[str]) -> str:
+#     return ' '.join(l)
+
+
+# def joiner_untyped(l):
+#     return ' '.join(l)
+
+
+# def plus(a: float, b: float) -> float:
+#     return a + b
+
+
+# def return_void(a: float, b: str) -> None:
+#     print(a, b)
+
+
+# # print(serialize.from_val(joiner))
+# # print(serialize.from_val(return_void))
+# print(serialize.from_val(None))
+# # print(serialize.from_val(joiner_untyped))
+
 import time
 import threading
+import queue
 
-class Val:
+
+class Foo:
     def __init__(self):
-        self._val = None
+        self.q = queue.Queue()
 
-    def get_val(self):
-        return self._val
+    def start(self):
+        a = threading.Thread(target=self._get)
+        b = threading.Thread(target=self._put)
+        a.start()
+        b.start()
 
-    def set_val(self, val):
-        self._val = val
+    def _get(self):
+        while True:
+            i = self.q.get(block=True)
+            print('Getting', i)
 
- 
-def generator(val):
-    while True:
-        yield val.get_val()
-        print('hello')
-        time.sleep(2)
-
-def loop(generator):
-    for val in generator:
-        print(val) 
-
-
-def run_generator(val):
-    thread = threading.Thread(target=loop, args=(generator(val),))
-    thread.start()
+    def _put(self):
+        i = 0
+        while True:
+            time.sleep(1)
+            i += 1
+            self.q.put(i)
+            print('Putting', i)
 
 
-print('generating')
-val = Val()
-val.set_val(5)
-
-run_generator(val)
-print('done generating')
-
-time.sleep(5)
-print('updating val to 10')
-val.set_val(10)
-
-
+foo = Foo()
+foo.start()

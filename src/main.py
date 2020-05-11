@@ -1,23 +1,27 @@
 import argparse
+import asyncio
 import os
+import simple_example
 
-from bow_classifier import train as build_bow_classifier
+from bow_classifier import build as build_bow_classifier
 from glove_classifier import build as build_glove_classifier
 from utils import lifecycle
 from utils.task_mgr import get_workflows, InvalidWorkflowName, register_workflows, run_workflow
 
+_IMAGE_NAME = os.environ.get('IMAGE_NAME')
+_PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
-def start(commands):
+
+def register(commands):
     if len(commands) > 0:
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('Starting worker...')
+    print('Registering Project...')
     lifecycle.start_connection()
-    lifecycle.start_worker()
-    worker = lifecycle.register_worker()
+    project = lifecycle.register_project()
 
-    print(f'Worker running: {worker.id}')
+    print(f'Project registered: {project.id}')
 
 
 def run(commands):
@@ -34,24 +38,55 @@ def run(commands):
     print(f'WorkflowRun ID: {workflow_run.id}')
 
 
-def register(commands):
+def start(commands):
     if len(commands) > 0:
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('Registering Project...')
+    print('Starting worker...')
     lifecycle.start_connection()
-    project = lifecycle.register_project()
+    lifecycle.start_worker()
+    worker = lifecycle.register_worker()
 
-    print(f'Project registered: {project.id}')
+    print(f'Worker running: {worker.id}')
+
+
+def info(commands):
+    if len(commands) > 0:
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    print(f'Project Name: {_PROJECT_NAME}')
+    print(f'Image Name: {_IMAGE_NAME}')
+
+
+def tasks_ls(commands):
+    if len(commands) > 0:
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    for executable in lifecycle.get_task_execs():
+        routine_id = executable.routine_id
+        print(routine_id.routine_name, '\t', routine_id.version)
+
+
+def workflows_ls(commands):
+    if len(commands) > 0:
+        print('Error: Invalid cli command.')
+        exit(1)
+
+    for executable in lifecycle.get_workflow_execs():
+        routine_id = executable.routine_id
+        print(routine_id.routine_name)
+
+
+def tmp(commands):
+    model = lifecycle.start_local_routine(simple_example.build)
+    print(model)
 
 
 if __name__ == '__main__':
     register_workflows([build_bow_classifier, build_glove_classifier])
-
-    for wf in get_workflows():
-        print(wf.name)
-        print(wf.call_graph)
 
     parser = argparse.ArgumentParser(description='Project Runner')
     parser.add_argument('commands', type=str, nargs='+')
@@ -66,12 +101,32 @@ if __name__ == '__main__':
     domain = commands[0]
 
     routines = {
+        'tmp': tmp,
+        'info': info,
         'register': register,
         'run': run,
         'start': start,
+        'tasks ls': tasks_ls,
+        'task ls': tasks_ls,
+        't ls': tasks_ls,
+        'ts ls': tasks_ls,
+        'workflows ls': workflows_ls,
+        'workflow ls': workflows_ls,
+        'wf ls': workflows_ls,
+        'wfs ls': workflows_ls,
     }
 
-    if domain not in routines:
-        print(f'Error: Unrecognized command: "{domain}"')
+    found_match = False
 
-    routines[domain](commands[1:])
+    for key, func in routines.items():
+        target = key.split()
+        found_match = all(
+            [x == y for x, y in zip(target, commands[:len(target)])])
+
+        if found_match:
+            func(commands[len(target):])
+            break
+
+    if not found_match:
+        print(f'Error: Unrecognized command: "{domain}"')
+        exit(1)

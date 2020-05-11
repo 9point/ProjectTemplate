@@ -4,7 +4,9 @@ import os
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
 from utils import task_mgr, worker_thread
+from utils.engine.local_run_engine import LocalRunEngine
 from utils.lifecycle.Connection import Connection
+from utils.lifecycle.ExecutableRegistry import ExecutableRegistry
 from utils.lifecycle.Logger import Logger
 from utils.lifecycle.TaskRunner import TaskRunner
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
@@ -15,9 +17,29 @@ _IMAGE_NAME = os.environ.get('IMAGE_NAME')
 _PROJECT_NAME = os.environ.get('PROJECT_NAME')
 
 _CONNECTION = None
+_ENGINE = None
+_EXECUTABLE_REGISTRY = ExecutableRegistry()
 _LOGGER = None
 _TASK_RUNNER = None
 _WORKER_SUBSCRIPTIONS = []
+
+
+def is_service_logger_running():
+    global _LOGGER
+    return _LOGGER is not None
+
+
+def start_local_routine(executable, *args, **kwargs):
+    global _ENGINE
+
+    assert _ENGINE is None
+
+    print('starting local routine')
+
+    _ENGINE = LocalRunEngine()
+
+    print('done starting engine, running exec')
+    return _ENGINE.start(executable, *args, **kwargs)
 
 
 def start_worker():
@@ -66,16 +88,17 @@ def register_project():
     global _CONNECTION
 
     assert(_CONNECTION is not None)
-    return _CONNECTION.register_project()
+    return _CONNECTION.register_project(_EXECUTABLE_REGISTRY)
 
 
 def register_worker():
+    # TODO: Set engine.
     global _CONNECTION
     global _TASK_RUNNER
 
     assert(_CONNECTION is not None)
 
-    worker = _CONNECTION.register_worker()
+    worker = _CONNECTION.register_worker(_EXECUTABLE_REGISTRY)
 
     _CONNECTION.on_directive('v1.task.request_start',
                              _on_request_task_start)
@@ -86,6 +109,26 @@ def register_worker():
     _TASK_RUNNER.on_task_complete(_on_task_completed)
 
     return worker
+
+
+def register_task_exec(task_exec):
+    global _EXECUTABLE_REGISTRY
+    _EXECUTABLE_REGISTRY.add_task_exec(task_exec)
+
+
+def get_task_execs():
+    global _EXECUTABLE_REGISTRY
+    return _EXECUTABLE_REGISTRY.task_execs
+
+
+def register_workflow_exec(wf_exec):
+    global _EXECUTABLE_REGISTRY
+    _EXECUTABLE_REGISTRY.add_workflow_exec(wf_exec)
+
+
+def get_workflow_execs():
+    global _EXECUTABLE_REGISTRY
+    return _EXECUTABLE_REGISTRY.workflow_execs
 
 
 def run_workflow(workflow_name):
@@ -100,6 +143,11 @@ def send_directive(payload_key, payload):
 
     assert(_CONNECTION is not None)
     _CONNECTION.send_directive(payload_key, payload)
+
+
+def engine():
+    global _ENGINE
+    return _ENGINE
 
 
 def log(payload):

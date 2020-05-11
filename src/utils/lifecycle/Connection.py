@@ -3,11 +3,11 @@ import os
 import time
 
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
-from utils import task_mgr
 from utils.lifecycle.DirectiveStreamer import DirectiveStreamer
 from utils.models.Project import Project
 from utils.models.Worker import Worker
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
+from utils.RoutineID import RoutineID
 
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
 _IMAGE_NAME = os.environ.get('IMAGE_NAME')
@@ -30,7 +30,7 @@ class Connection:
         # TODO: IMPLEMENT ME!
         pass
 
-    def register_project(self):
+    def register_project(self, executable_registry):
         """
         Register this project with the API Service. This gives the API
         Service any information about what this worker is capable of working
@@ -40,16 +40,16 @@ class Connection:
 
         assert(self._channel is not None)
 
-        workflows = task_mgr.get_workflows()
-        tasks = task_mgr.get_tasks()
+        workflow_execs = executable_registry.workflow_execs
+        task_execs = executable_registry.task_execs
 
-        assert(len(workflows) > 0)
-        assert(len(tasks) > 0)
+        assert(len(workflow_execs) > 0)
+        assert(len(task_execs) > 0)
 
         stub = self._create_stub()
 
-        request_register_project = mlservice_pb2.Req_RegisterProject(image_name=_IMAGE_NAME,
-                                                                     name=_PROJECT_NAME)
+        request_register_project = mlservice_pb2.Req_RegisterProject(
+            name=_PROJECT_NAME)
 
         project_proto = stub.RegisterProject(request_register_project)
 
@@ -57,24 +57,36 @@ class Connection:
             mlservice_pb2.Req_RegisterTask(name=t.name,
                                            project_ref_id=project_proto.id,
                                            version=t.version)
-            for t in tasks]
+            for t in task_execs]
 
         tasks_proto = [
             t for t in stub.RegisterTasks(iter(requests_register_tasks))]
 
+        task_ids = '|'.join([proto.id for proto in tasks_proto])
+
         requests_register_workflows = [
             mlservice_pb2.Req_RegisterWorkflow(name=wf.name,
-                                               project_ref_id=project_proto.id,
-                                               task_names='|'.join(wf.task_names))
-            for wf in workflows]
+                                               project_ref_id=project_proto.id)
+            for wf in workflow_execs]
 
         workflows_proto = [
             wf for wf in stub.RegisterWorkflows(iter(requests_register_workflows))]
 
+        workflow_ids = '|'.join([proto.id for proto in workflows_proto])
+
+        request_register_container_image = mlservice_pb2.Req_RegisterContainerImage(name=_IMAGE_NAME,
+                                                                                    project_id=project_proto.id,
+                                                                                    protocol='v1.python',
+                                                                                    task_ids=task_ids,
+                                                                                    workflow_ids=workflow_ids)
+
+        container_image_proto = stub.RegisterContainerImage(
+            request_register_container_image)
+
         self._project = Project.from_grpc_message(project_proto)
         return self._project
 
-    def register_worker(self):
+    def register_worker(self, executable_registry):
         """
         Registers the worker with the API Service. This will let the API
         Service that this worker is ready and connected so it can receive
@@ -96,8 +108,13 @@ class Connection:
 
         # Register the worker with the api.
 
+        execs = executable_registry.task_execs + executable_registry.workflow_execs
+        str_ids = [str(e.routine_id) for e in execs]
+        routines_str = '|'.join(str_ids)
+
         request_register_worker = mlservice_pb2.Req_RegisterWorker(
-            project_id=project_proto.id)
+            project_id=project_proto.id,
+            routines=routines_str)
 
         worker_proto = stub.RegisterWorker(request_register_worker)
 
@@ -129,7 +146,7 @@ class Connection:
         return stub.RunWorkflow(request)
 
     def on_directive(self, payload_key, cb):
-        self._directive_streamer.on(payload_key, cb)
+        return self._directive_streamer.on(payload_key, cb)
 
     def send_directive(self, payload_key, payload):
         assert(self._worker is not None)
