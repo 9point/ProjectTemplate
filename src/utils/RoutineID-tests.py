@@ -2,14 +2,14 @@ from utils.RoutineID import RoutineID
 
 
 def test_parse_dbid():
-    rid = RoutineID.parse('db:1234')
-    assert rid.rtype == 'db'
+    rid = RoutineID.parse('tdb:1234')
+    assert rid.rtype == 'tdb'
     assert rid.dbid == '1234'
 
 
 def test_stringify_dbid():
-    str_id = str(RoutineID.parse('db:321'))
-    assert str_id == 'db:321'
+    str_id = str(RoutineID.parse('wfdb:321'))
+    assert str_id == 'wfdb:321'
 
 
 def test_parse_tname():

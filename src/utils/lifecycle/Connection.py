@@ -135,7 +135,7 @@ class Connection:
 
         request = WorkerDirectiveRequest(payload_key=payload_key,
                                          payload=payload,
-                                         worker_id=self._worker.id)
+                                         from_worker_id=self._worker.id)
 
         self._directive_streamer.send(request)
 

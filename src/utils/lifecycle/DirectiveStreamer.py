@@ -84,7 +84,7 @@ def _generator(instance):
 
     yield WorkerDirectiveRequest(payload_key='v1.worker.ready',
                                  payload={},
-                                 worker_id=instance._worker.id).to_grpc_message()
+                                 from_worker_id=instance._worker.id).to_grpc_message()
 
     while True:
         request = instance._send_buffer.get(block=True)

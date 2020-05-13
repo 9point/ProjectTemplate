@@ -69,8 +69,14 @@ def workflows_ls(commands):
 
 
 def tmp(commands):
-    model = lifecycle.start_local_routine(simple_example.build)
-    print(model)
+    print('Running simple example')
+
+    routine_id = 'simple_example.build'
+    arguments = dict(args=[], kwargs={})
+
+    lifecycle.start_connection()
+    lifecycle.run_routine_TMP(routine_id, arguments)
+    print('Done')
 
 
 if __name__ == '__main__':

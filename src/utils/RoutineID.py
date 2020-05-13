@@ -21,9 +21,9 @@ class RoutineID:
         tokens = str_id.split(':')
 
         rtype = tokens[0]
-        assert(rtype in ['db', 'tname', 'wfname'])
+        assert(rtype in ['tdb', 'wfdb', 'tname', 'wfname'])
 
-        if rtype == 'db':
+        if rtype == 'tdb' or rtype == 'wfdb':
             assert(len(tokens) == 2)
             return RoutineID(rtype=rtype, dbid=tokens[1])
 
@@ -53,7 +53,7 @@ class RoutineID:
         if self.rtype != other.rtype:
             return False
 
-        if self.rtype == 'db':
+        if self.rtype == 'tdb' or self.rtype == 'wfdb':
             return self.dbid == other.dbid
 
         if (
@@ -73,8 +73,8 @@ class RoutineID:
         )
 
     def __str__(self):
-        if self.rtype == 'db':
-            return f'db:{self.dbid}'
+        if self.rtype == 'tdb' or self.rtype == 'wfdb':
+            return f'{self.rtype}:{self.dbid}'
 
         str_id = self.rtype
 
