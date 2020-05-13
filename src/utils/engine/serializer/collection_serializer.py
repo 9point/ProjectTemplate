@@ -9,7 +9,7 @@ class Serializer(BaseSerializer):
         return 'Collection'
 
     def claim_val(self, val):
-        return type(val) in [list, dict, set]
+        return type(val) in [list, dict, set, tuple]
 
     def serialize(self, serialize_func, val):
         if type(val) is list:
@@ -20,6 +20,10 @@ class Serializer(BaseSerializer):
             # TODO: Assuming key is always a string. Need to address this later.
             serial_val = {k: serialize_func(v) for k, v in val.items()}
             return dict(key=self.key, collection_type='dict', val=serial_val)
+
+        if type(val) is tuple:
+            serial_val = [serialize_func(v) for v in val]
+            return dict(key=self.key, collection_type='tuple', val=serial_val)
 
         assert False
 
@@ -35,5 +39,8 @@ class Serializer(BaseSerializer):
 
         if serial['collection_type'] == 'dict':
             return {k: deserialize_func(sv) for k, sv in serial_val.items()}
+
+        if serial['collection_type'] == 'tuple':
+            return tuple([deserialize_func(sv) for sv in serial_val])
 
         assert False

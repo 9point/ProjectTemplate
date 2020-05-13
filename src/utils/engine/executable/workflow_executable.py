@@ -1,4 +1,10 @@
+import os
+
 from ...RoutineID import RoutineID
+
+_PROJECT_NAME = os.environ.get('PROJECT_NAME')
+
+assert(_PROJECT_NAME is not None)
 
 
 class WorkflowExecutable:
@@ -14,7 +20,7 @@ class WorkflowExecutable:
     @property
     def routine_id(self):
         return RoutineID(rtype='wfname',
-                         project_name=None,
+                         project_name=_PROJECT_NAME,
                          routine_name=self.name,
                          version=None)
 

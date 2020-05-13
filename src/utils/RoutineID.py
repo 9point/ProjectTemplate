@@ -30,11 +30,19 @@ class RoutineID:
         assert(len(tokens) in [2, 3, 4])
 
         if len(tokens) == 4:
+            if rtype == 'wfname':
+                raise InvalidRoutineID()
+
             project_name = tokens[1]
             routine_name = tokens[2]
             version = tokens[3]
 
-        if len(tokens) == 3:
+        if len(tokens) == 3 and rtype == 'tname':
+            project_name = None
+            routine_name = tokens[1]
+            version = tokens[2]
+
+        elif len(tokens) == 3 and rtype == 'wfname':
             project_name = tokens[1]
             routine_name = tokens[2]
             version = None
@@ -87,3 +95,7 @@ class RoutineID:
             str_id += f':{self.version}'
 
         return str_id
+
+
+class InvalidRoutineID(Exception):
+    pass

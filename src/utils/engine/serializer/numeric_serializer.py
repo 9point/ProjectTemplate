@@ -2,6 +2,7 @@ from .serializer import Serializer as BaseSerializer
 
 
 class Serializer(BaseSerializer):
+    @property
     def key(self):
         return 'v1.numeric'
 

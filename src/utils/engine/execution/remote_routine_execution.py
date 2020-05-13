@@ -12,6 +12,10 @@ class RemoteRoutineExecution:
         self._connection = connection
         self._fut = None
 
+    @property
+    def routine_id(self):
+        return self.executable.routine_id
+
     async def __call__(self):
         loop = asyncio.get_running_loop()
         fut = loop.create_future()

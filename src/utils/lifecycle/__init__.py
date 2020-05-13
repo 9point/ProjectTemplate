@@ -1,4 +1,5 @@
 import grpc
+import json
 import os
 import threading
 
@@ -38,6 +39,15 @@ def start_local_routine(executable, *args, **kwargs):
 
     _ENGINE = LocalRunEngine()
     return _ENGINE.start(executable, *args, **kwargs)
+
+
+def start_remote_routine(executable, *args, **kwargs):
+    global _CONNECTION
+    assert _CONNECTION is not None
+
+    arguments = dict(args=args, kwargs=kwargs)
+    print('args', arguments)
+    return _CONNECTION.run_routine(executable.routine_id, arguments)
 
 
 def start_engine():
@@ -136,12 +146,24 @@ def log(payload):
 
 def _engine_result_thread():
     global _ENGINE
+    global _CONNECTION
 
+    assert _CONNECTION is not None
     assert _ENGINE is not None
 
     while True:
-        result = _ENGINE.result_queue.get(block=True)
+        execution, result = _ENGINE.result_queue.get(block=True)
         print('Finished execution with result:', result)
+
+        # TODO: To make this more robust, if a connection to the service
+        # fails, should hold on to the result until the connection
+        # is re-established.
+        assert _CONNECTION is not None
+        payload_key = 'v1.routine.completed'
+        payload = dict(result=json.dumps(serialize(result)),
+                       requestingWorkerLocalExecutionID=execution.local_id,
+                       routine_id=str(execution.routine_id))
+        _CONNECTION.send_directive(payload_key, payload)
 
 
 def _on_heartbeat_check_pulse(directive):
@@ -190,6 +212,7 @@ def _on_routine_starting(directive):
     assert 'arguments' in directive.payload
 
     routine_id = directive.payload['routineID']
+    # TODO: IMPLEMENT ME!
 
 
 def _on_engine_terminated():

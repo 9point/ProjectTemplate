@@ -71,12 +71,13 @@ def workflows_ls(commands):
 def tmp(commands):
     print('Running simple example')
 
-    routine_id = 'simple_example.build'
-    arguments = dict(args=[], kwargs={})
+    # routine_id = 'simple_example.build'
+    # arguments = dict(args=[], kwargs={})
+    # lifecycle.run_routine_TMP(routine_id, arguments)
 
     lifecycle.start_connection()
-    lifecycle.run_routine_TMP(routine_id, arguments)
-    print('Done')
+    run = lifecycle.start_remote_routine(simple_example.build)
+    print('Starting run:', run.id)
 
 
 if __name__ == '__main__':

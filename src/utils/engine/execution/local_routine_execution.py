@@ -7,6 +7,10 @@ class LocalRoutineExecution:
         self.arguments = dict(args=args, kwargs=kwargs)
         self.local_id = create_execution_id()
 
+    @property
+    def routine_id(self):
+        return self.executable.routine_id
+
     async def __call__(self):
         args = self.arguments['args']
         kwargs = self.arguments['kwargs']

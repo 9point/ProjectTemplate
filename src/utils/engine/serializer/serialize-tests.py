@@ -47,3 +47,9 @@ def test_serialize_nested_dict():
     dict1_expected = dict(a=1, b=dict(c=2))
     dict1_actual = deserialize(serialize(dict1_expected))
     assert dict1_expected == dict1_actual
+
+
+def test_serialize_empty_arguments():
+    dict1_expected = dict(args=(), kwargs={})
+    dict1_actual = deserialize(serialize(dict1_expected))
+    assert dict1_expected == dict1_actual

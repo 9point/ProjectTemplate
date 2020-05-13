@@ -1,4 +1,10 @@
+import os
+
 from ...RoutineID import RoutineID
+
+_PROJECT_NAME = os.environ.get('PROJECT_NAME')
+
+assert(_PROJECT_NAME is not None)
 
 
 class TaskExecutable:
@@ -16,7 +22,7 @@ class TaskExecutable:
     @property
     def routine_id(self):
         return RoutineID(rtype='tname',
-                         project_name=None,
+                         project_name=_PROJECT_NAME,
                          routine_name=self.name,
                          version=self.version)
 
