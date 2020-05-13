@@ -24,31 +24,19 @@ def register(commands):
     print(f'Project registered: {project.id}')
 
 
-def run(commands):
-    if len(commands) != 1:
-        print('Error: Invalid cli command.')
-        exit(1)
-
-    workflow_name = commands[0]
-    print(f'Running workflow: "{workflow_name}"...')
-
-    lifecycle.start_connection()
-    workflow_run = lifecycle.run_workflow(workflow_name)
-
-    print(f'WorkflowRun ID: {workflow_run.id}')
-
-
 def start(commands):
     if len(commands) > 0:
         print('Error: Invalid cli command.')
         exit(1)
 
-    print('Starting worker...')
+    print('Setting up connection...')
     lifecycle.start_connection()
-    lifecycle.start_worker()
+    print('Registering worker...')
     worker = lifecycle.register_worker()
-
     print(f'Worker running: {worker.id}')
+
+    print('Starting Engine')
+    lifecycle.start_engine()
 
 
 def info(commands):
@@ -104,7 +92,6 @@ if __name__ == '__main__':
         'tmp': tmp,
         'info': info,
         'register': register,
-        'run': run,
         'start': start,
         'tasks ls': tasks_ls,
         'task ls': tasks_ls,

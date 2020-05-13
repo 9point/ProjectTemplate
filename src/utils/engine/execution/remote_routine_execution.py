@@ -5,20 +5,14 @@ from ..serializer import deserialize, serialize
 
 
 class RemoteRoutineExecution:
-    def __init__(self, connection, executable):
+    def __init__(self, connection, executable, *args, **kwargs):
         self.executable = executable
         self.local_id = create_execution_id()
+        self.arguments = dict(args=args, kwargs=kwargs)
         self._connection = connection
-        self._is_called = False
         self._fut = None
-        self._subs = None
 
-    async def __call__(self, *args, **kwargs):
-        # Assuming this will get called exactly once.
-        assert(not self._is_called)
-
-        self._is_called = True
-
+    async def __call__(self):
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
 
@@ -31,7 +25,7 @@ class RemoteRoutineExecution:
                                           self._on_routine_failed)
         ]
 
-        arguments = serialize(dict(args=args, kwargs=kwargs))
+        arguments = serialize(self.arguments)
         request_payload = dict(requestingWorkerLocalExecutionID=self.local_id,
                                routine_id=self.executable.routine_id,
                                arguments=arguments)

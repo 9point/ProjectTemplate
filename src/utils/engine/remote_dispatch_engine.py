@@ -1,4 +1,5 @@
 import asyncio
+import queue
 import threading
 
 from .execution.local_routine_execution import LocalRoutineExecution
@@ -9,32 +10,51 @@ from .serializer import deserialize, serialize
 class RemoteDispatchEngine:
     def __init__(self, connection):
         self._connection = connection
-        self._executions = []
         self._loop = None
-        self._future_registry = {}
+        self._result_queue = queue.Queue()
+        self._work_queue = queue.Queue()
 
-    def start(self, executable, *args, **kwargs):
+    @property
+    def status(self):
+        return self._status
+
+    @property
+    def result_queue(self):
+        return self._result_queue
+
+    def schedule_executable(self, executable, *args, **kwargs):
+        execution = LocalRoutineExecution(executable, *args, **kwargs)
+        self._work_queue.put(execution)
+
+    def start(self):
+        """
+        Starts the engine. This method does not return (unless there is
+        a major engine error).
+        """
         assert self._loop is None
-        # TODO: IMPLEMENT ME! START THE LOOP.
 
-    def cleanup(self):
+        self._loop = asyncio.new_event_loop()
+        self._main_task = self._loop.create_task(self._start())
+        self._loop.run_forever()
+
+    def stop(self):
         # TODO: IMPLEMENT ME!
-        pass
+        assert(False, 'RemoteDispatchEngine has not yet implemented stop')
 
-    def run_executable(self, executable, *args, **kwargs):
+    async def _start(self):
+        while True:
+            self._status = 'IDLE'
+            execution = self._work_queue.get(block=True)
+            self._status = 'WORKING'
+            result = await execution()
+            self._result_queue.put((execution, result))
+
+    async def run_executable(self, executable, *args, **kwargs):
         assert self._loop is not None
-        return await self._remote_execution(executable, *args, **kwargs)
 
-    def _local_execution(self, executable, *args, **kwargs):
-        execution = LocalRoutineExecution(executable)
-        return await execution
+        self._status = 'HANGING'
+        execution = LocalRoutineExecution(executable, *args, **kwargs)
+        result = await execution()
 
-    def _remote_execution(self, executable, *args, **kwargs):
-        execution = RemoteRoutineExecution(self._connection, executable)
-        self._executions.append(execution)
-
-        result = await execution(*args, **kwargs)
-
-        execution.cleanup()
-
+        self._status = 'WORKING'
         return result

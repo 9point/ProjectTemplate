@@ -6,4 +6,4 @@ from .train import TModel, train
 async def build() -> TModel:
     print('workflow building')
     model = await train(epochs=100)
-    return model
+    return 'Done with mode result'
