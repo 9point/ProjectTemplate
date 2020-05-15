@@ -7,7 +7,7 @@ TModel = Any
 
 
 @define.task(name='simple_example.train', version="0.0.1")
-def train(epochs: int) -> TModel:
+def train(epochs: int) -> str:
     # N is batch size; D_in is input dimension;
     # H is hidden dimension; D_out is output dimension.
     N, D_in, H, D_out = 64, 1000, 100, 10
@@ -43,4 +43,5 @@ def train(epochs: int) -> TModel:
         w1 -= learning_rate * grad_w1
         w2 -= learning_rate * grad_w2
 
-    return dict(w1=w1, w2=w2)
+    return 'hello'
+    # return dict(w1=w1, w2=w2)

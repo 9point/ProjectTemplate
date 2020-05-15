@@ -11,6 +11,7 @@ class RemoteDispatchEngine:
     def __init__(self, connection):
         self._connection = connection
         self._loop = None
+        self._parent_run_id = None
         self._result_queue = queue.Queue()
         self._work_queue = queue.Queue()
 
@@ -22,8 +23,8 @@ class RemoteDispatchEngine:
     def result_queue(self):
         return self._result_queue
 
-    def schedule_executable(self, executable, *args, **kwargs):
-        execution = LocalRoutineExecution(executable, *args, **kwargs)
+    def schedule_executable(self, executable, run_id, arguments):
+        execution = LocalRoutineExecution(executable, run_id, arguments)
         self._work_queue.put(execution)
 
     def start(self):
@@ -46,15 +47,30 @@ class RemoteDispatchEngine:
             self._status = 'IDLE'
             execution = self._work_queue.get(block=True)
             self._status = 'WORKING'
+
+            self._parent_run_id = execution.run_id
+
             result = await execution()
+            execution.cleanup()
             self._result_queue.put((execution, result))
 
     async def run_executable(self, executable, *args, **kwargs):
         assert self._loop is not None
+        assert self._parent_run_id is not None
+
+        arguments = dict(args=args, kwargs=kwargs)
+        parent_run_id = self._parent_run_id
 
         self._status = 'HANGING'
-        execution = LocalRoutineExecution(executable, *args, **kwargs)
+        # TODO: When there is an exception here, the thread silently
+        # fails. Need to look into this.
+        execution = RemoteRoutineExecution(self._connection,
+                                           parent_run_id,
+                                           executable,
+                                           arguments)
+
         result = await execution()
 
+        execution.cleanup()
         self._status = 'WORKING'
         return result

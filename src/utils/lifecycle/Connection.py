@@ -9,6 +9,7 @@ from utils.models.Project import Project
 from utils.models.Worker import Worker
 from utils.models.WorkerDirectiveRequest import WorkerDirectiveRequest
 from utils.RoutineID import RoutineID
+from ..engine.execution import create_local_run_id
 from ..engine.serializer import serialize
 
 _API_ENDPOINT = os.environ.get('API_ENDPOINT')
@@ -133,6 +134,7 @@ class Connection:
         stub = self._create_stub()
         serial_arguments = serialize(arguments)
         run_routine = mlservice_pb2.Req_RunRoutine(routine_id=str(routine_id),
+                                                   local_run_id=create_local_run_id(),
                                                    arguments=json.dumps(serial_arguments))
 
         return stub.RunRoutine(run_routine)

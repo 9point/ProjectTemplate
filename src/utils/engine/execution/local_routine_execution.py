@@ -1,11 +1,12 @@
-from . import create_execution_id
+from . import create_local_run_id
 
 
 class LocalRoutineExecution:
-    def __init__(self, executable, *args, **kwargs):
+    def __init__(self, executable, run_id, arguments):
         self.executable = executable
-        self.arguments = dict(args=args, kwargs=kwargs)
-        self.local_id = create_execution_id()
+        self.local_id = create_local_run_id()
+        self.run_id = run_id
+        self.arguments = arguments
 
     @property
     def routine_id(self):
@@ -19,3 +20,7 @@ class LocalRoutineExecution:
             return await self.executable.run(*args, **kwargs)
         else:
             return self.executable.run(*args, **kwargs)
+
+
+    def cleanup(self):
+        pass

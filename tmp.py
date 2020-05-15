@@ -30,31 +30,25 @@ import threading
 import time
 import queue
 
-q = queue.Queue()
+
+async def run():
+    print('running')
+    result = await do_something()
+    print(result)
 
 
-def start_loop(q):
-    print('starting loop')
-    loop = asyncio.new_event_loop()
-    task = loop.create_task(run('main thread', q))
-    loop.run_forever()
+def do_something():
+    loop = asyncio.get_running_loop()
+    fut = loop.create_future()
+
+    async def do_fut():
+        await asyncio.sleep(2)
+        print('setting result')
+        fut.set_result(10)
+
+    loop.create_task(do_fut())
+
+    return fut
 
 
-async def run(message, q):
-    i = 0
-    while True:
-        q.put(f'{message} {i}')
-        i += 1
-        time.sleep(1)
-
-
-def process(q: queue.Queue):
-    while True:
-        message = q.get(block=True)
-        print('Processing message', message)
-
-
-thread = threading.Thread(target=process, args=(q,))
-thread.start()
-
-start_loop(q)
+asyncio.run(run())

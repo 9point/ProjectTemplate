@@ -1,15 +1,19 @@
 import asyncio
+import json
 
-from . import create_execution_id
+from . import create_local_run_id
 from ..serializer import deserialize, serialize
 
 
 class RemoteRoutineExecution:
-    def __init__(self, connection, executable, *args, **kwargs):
+    def __init__(self, connection, parent_run_id, executable, arguments):
         self.executable = executable
-        self.local_id = create_execution_id()
-        self.arguments = dict(args=args, kwargs=kwargs)
+        self.local_run_id = create_local_run_id()
+        self.arguments = arguments
+        self.parent_run_id = parent_run_id
+        self.run_id = None
         self._connection = connection
+        self._event_loop = None
         self._fut = None
 
     @property
@@ -30,13 +34,15 @@ class RemoteRoutineExecution:
         ]
 
         arguments = serialize(self.arguments)
-        request_payload = dict(requestingWorkerLocalExecutionID=self.local_id,
-                               routine_id=self.executable.routine_id,
+        request_payload = dict(localRunID=self.local_run_id,
+                               parentRunID=self.parent_run_id,
+                               routineID=str(self.executable.routine_id),
                                arguments=arguments)
 
         self._connection.send_directive(payload_key='v1.routine.request_start',
                                         payload=request_payload)
 
+        self._event_loop = loop
         self._fut = fut
 
         return await fut
@@ -55,37 +61,55 @@ class RemoteRoutineExecution:
         if self._fut is None:
             return
 
-        assert 'requestingWorkerLocalExecutionID' in directive.payload
+        assert self._event_loop is not None
 
-        if directive.payload['requestingWorkerLocalExecutionID'] != self.local_id:
+        assert 'localRunID' in directive.payload
+        assert 'routineID' in directive.payload
+        assert 'runID' in directive.payload
+
+        if directive.payload['localRunID'] != self.local_run_id:
             # This routine is not the one run by this execution.
             return
 
-        print('routine starting')
+        print('remote routine starting')
 
     def _on_routine_failed(self, directive):
         if self._fut is None:
             return
 
-        assert 'requestingWorkerLocalExecutionID' in directive.payload
+        assert self._event_loop is not None
 
-        if directive.payload['requestingWorkerLocalExecutionID'] != self.local_id:
+        assert 'errorMessage' in directive.payload
+        assert 'localRunID' in directive.payload
+        assert 'routineID' in directive.payload
+        assert 'runID' in directive.payload
+
+        if directive.payload['localRunID'] != self.local_run_id:
             # This routine is not the one run by this execution.
             return
 
-        print('routine failed')
+        self._event_loop.call_soon_threadsafe(self._fut.set_exception,
+                                              RemoteExecutionFailed())
 
     def _on_routine_completed(self, directive):
         if self._fut is None:
             return
 
-        assert 'requestingWorkerLocalExecutionID' in directive.payload
+        assert self._event_loop is not None
 
-        if directive.payload['requestingWorkerLocalExecutionID'] != self.local_id:
+        assert 'localRunID' in directive.payload
+        assert 'result' in directive.payload
+        assert 'routineID' in directive.payload
+        assert 'runID' in directive.payload
+
+        if directive.payload['localRunID'] != self.local_run_id:
             # This routine is not the one run by this execution.
             return
 
-        assert 'result' in directive.payload
-
         result = deserialize(directive.payload['result'])
-        self._fut.set_result(result)
+        self._event_loop.call_soon_threadsafe(self._fut.set_result,
+                                              result)
+
+
+class RemoteExecutionFailed(Exception):
+    pass

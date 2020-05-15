@@ -6,7 +6,7 @@ from .serializer import Serializer as BaseSerializer
 class Serializer(BaseSerializer):
     @property
     def key(self):
-        return 'Collection'
+        return 'v1.Collection'
 
     def claim_val(self, val):
         return type(val) in [list, dict, set, tuple]

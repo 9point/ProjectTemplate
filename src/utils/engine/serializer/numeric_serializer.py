@@ -4,7 +4,7 @@ from .serializer import Serializer as BaseSerializer
 class Serializer(BaseSerializer):
     @property
     def key(self):
-        return 'v1.numeric'
+        return 'v1.Numeric'
 
     def claim_val(self, val):
         return type(val) in [int, float]

@@ -1,5 +1,4 @@
 import grpc
-import json
 import os
 import threading
 
@@ -160,9 +159,9 @@ def _engine_result_thread():
         # is re-established.
         assert _CONNECTION is not None
         payload_key = 'v1.routine.completed'
-        payload = dict(result=json.dumps(serialize(result)),
-                       requestingWorkerLocalExecutionID=execution.local_id,
-                       routine_id=str(execution.routine_id))
+        payload = dict(result=serialize(result),
+                       routineID=str(execution.routine_id),
+                       runID=execution.run_id)
         _CONNECTION.send_directive(payload_key, payload)
 
 
@@ -184,35 +183,25 @@ def _on_heartbeat_check_pulse(directive):
 
 
 def _on_routine_request_start(directive):
+    print('received request start')
+
     global _CONNECTION
     global _ENGINE
     global _EXECUTABLE_REGISTRY
 
     assert _ENGINE is not None
 
-    assert 'routineID' in directive.payload
     assert 'arguments' in directive.payload
+    assert 'localRunID' in directive.payload
+    assert 'routineID' in directive.payload
+    assert 'runID' in directive.payload
 
     routine_id = RoutineID.parse(directive.payload['routineID'])
+    run_id = directive.payload['runID']
     executable = _EXECUTABLE_REGISTRY.get_routine(routine_id)
 
     arguments = deserialize(directive.payload['arguments'])
-    args = arguments['args']
-    kwargs = arguments['kwargs']
-
-    _ENGINE.schedule_executable(executable, *args, **kwargs)
-
-
-def _on_routine_starting(directive):
-    global _CONNECTION
-
-    assert _CONNECTION is not None
-
-    assert 'routineID' in directive.payload
-    assert 'arguments' in directive.payload
-
-    routine_id = directive.payload['routineID']
-    # TODO: IMPLEMENT ME!
+    _ENGINE.schedule_executable(executable, run_id, arguments)
 
 
 def _on_engine_terminated():
