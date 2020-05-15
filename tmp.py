@@ -31,24 +31,22 @@ import time
 import queue
 
 
-async def run():
-    print('running')
-    result = await do_something()
+loop = asyncio.new_event_loop()
+
+
+def blah(loop):
+    async def run(fut):
+        await asyncio.sleep(2)
+        fut.set_result(10)
+
+    fut = loop.create_future()
+    loop.create_task(run(fut))
+    result = loop.run_until_complete(fut)
     print(result)
 
 
-def do_something():
-    loop = asyncio.get_running_loop()
-    fut = loop.create_future()
-
-    async def do_fut():
-        await asyncio.sleep(2)
-        print('setting result')
-        fut.set_result(10)
-
-    loop.create_task(do_fut())
-
-    return fut
-
-
-asyncio.run(run())
+thread = threading.Thread(target=blah, args=(loop,))
+thread.start()
+print('running')
+thread.join()
+print('done')
