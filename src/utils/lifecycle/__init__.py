@@ -4,6 +4,7 @@ import threading
 
 from datetime import datetime
 from static_codegen import mlservice_pb2, mlservice_pb2_grpc
+from uuid import uuid4
 from .Connection import Connection
 from .ExecutableRegistry import ExecutableRegistry
 from .Logger import Logger
@@ -31,13 +32,41 @@ def is_service_logger_running():
     return _LOGGER is not None
 
 
-def start_local_routine(executable, *args, **kwargs):
+def start_local_routine(executable, arguments):
+    global _CONNECTION
     global _ENGINE
 
+    assert 'args' in arguments
+    assert 'kwargs' in arguments
     assert _ENGINE is None
 
-    _ENGINE = LocalRunEngine()
-    return _ENGINE.start(executable, *args, **kwargs)
+    _ENGINE = LocalRunEngine(_CONNECTION)
+
+    run_id = uuid4()
+    args = arguments['args']
+    kwargs = arguments['kwargs']
+    arguments = dict(args=args, kwargs=kwargs)
+
+    if _CONNECTION:
+        payload_key = 'v1.routine.starting'
+        payload = dict(localRunID='1',
+                       routineID=str(executable.routine_id),
+                       runID=str(run_id))
+
+        _CONNECTION.send_directive(payload_key, payload)
+
+    result = _ENGINE.start_executable(run_id, executable, arguments)
+
+    if _CONNECTION:
+        payload_key = 'v1.routine.completed'
+        payload = dict(localRunID='1',
+                       result=serialize(result),
+                       routineId=str(executable.routine_id),
+                       runID=str(run_id))
+        _CONNECTION.send_directive(payload_key, payload)
+
+    # TODO: Cleanup engine.
+    return result
 
 
 def start_remote_routine(executable, *args, **kwargs):
@@ -45,7 +74,6 @@ def start_remote_routine(executable, *args, **kwargs):
     assert _CONNECTION is not None
 
     arguments = dict(args=args, kwargs=kwargs)
-    print('args', arguments)
     return _CONNECTION.run_routine(executable.routine_id, arguments)
 
 
@@ -59,7 +87,10 @@ def start_engine():
     global _ENGINE
 
     _ENGINE = RemoteDispatchEngine(_CONNECTION)
-    engine_results_thread = threading.Thread(target=_engine_result_thread)
+
+    engine_results_thread = threading.Thread(
+        target=_remote_dispatch_engine_result_thread)
+
     engine_results_thread.start()
 
     _ENGINE.start()
@@ -87,13 +118,14 @@ def register_project():
     return _CONNECTION.register_project(_EXECUTABLE_REGISTRY)
 
 
-def register_worker():
+def register_worker(accepts_work_requests):
     global _CONNECTION
     global _DIRECTIVE_SUBSCRIPTIONS
 
     assert(_CONNECTION is not None)
 
-    worker = _CONNECTION.register_worker(_EXECUTABLE_REGISTRY)
+    worker = _CONNECTION.register_worker(_EXECUTABLE_REGISTRY,
+                                         accepts_work_requests)
 
     _DIRECTIVE_SUBSCRIPTIONS.extend([
         _CONNECTION.on_directive('v1.routine.request_start',
@@ -109,6 +141,11 @@ def register_worker():
 def register_task_exec(task_exec):
     global _EXECUTABLE_REGISTRY
     _EXECUTABLE_REGISTRY.add_task_exec(task_exec)
+
+
+def get_exec(routine_id):
+    global _EXECUTABLE_REGISTRY
+    return _EXECUTABLE_REGISTRY.get_exec(routine_id)
 
 
 def get_task_execs():
@@ -143,7 +180,7 @@ def log(payload):
     _LOGGER.send_log(payload)
 
 
-def _engine_result_thread():
+def _remote_dispatch_engine_result_thread():
     global _ENGINE
     global _CONNECTION
 
@@ -166,6 +203,8 @@ def _engine_result_thread():
 
 
 def _on_heartbeat_check_pulse(directive):
+    print('received check pulse')
+
     global _CONNECTION
     global _ENGINE
 
@@ -190,6 +229,7 @@ def _on_routine_request_start(directive):
     global _EXECUTABLE_REGISTRY
 
     assert _ENGINE is not None
+    assert isinstance(_ENGINE, RemoteDispatchEngine)
 
     assert 'arguments' in directive.payload
     assert 'localRunID' in directive.payload

@@ -2,7 +2,7 @@ from . import create_local_run_id
 
 
 class LocalRoutineExecution:
-    def __init__(self, executable, run_id, arguments):
+    def __init__(self, run_id, executable, arguments):
         self.executable = executable
         self.local_id = create_local_run_id()
         self.run_id = run_id

@@ -88,7 +88,7 @@ class Connection:
         self._project = Project.from_grpc_message(project_proto)
         return self._project
 
-    def register_worker(self, executable_registry):
+    def register_worker(self, executable_registry, accepts_work_requests):
         """
         Registers the worker with the API Service. This will let the API
         Service that this worker is ready and connected so it can receive
@@ -115,6 +115,7 @@ class Connection:
         routines_str = '|'.join(str_ids)
 
         request_register_worker = mlservice_pb2.Req_RegisterWorker(
+            accepts_work_requests=accepts_work_requests,
             project_id=project_proto.id,
             routines=routines_str)
 
@@ -143,8 +144,8 @@ class Connection:
         return self._directive_streamer.on(payload_key, cb)
 
     def send_directive(self, payload_key, payload):
-        assert(self._worker is not None)
-        assert(self._directive_streamer is not None)
+        assert self._worker is not None
+        assert self._directive_streamer is not None
 
         request = WorkerDirectiveRequest(payload_key=payload_key,
                                          payload=payload,

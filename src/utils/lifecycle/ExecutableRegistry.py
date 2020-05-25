@@ -12,7 +12,7 @@ class ExecutableRegistry:
     def workflow_execs(self):
         return self._workflow_execs
 
-    def get_routine(self, routine_id):
+    def get_exec(self, routine_id):
         for executable in self._task_execs:
             if executable.routine_id.is_match(routine_id):
                 return executable

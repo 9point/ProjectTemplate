@@ -1,126 +1,96 @@
 import argparse
-import asyncio
+import bow_classifier
+import glove_classifier
+import json
 import os
 import simple_example
 
-from bow_classifier import build as build_bow_classifier
-from glove_classifier import build as build_glove_classifier
 from utils import lifecycle
-from utils.task_mgr import get_workflows, InvalidWorkflowName, register_workflows, run_workflow
-
-_IMAGE_NAME = os.environ.get('IMAGE_NAME')
-_PROJECT_NAME = os.environ.get('PROJECT_NAME')
+from utils.RoutineID import RoutineID
 
 
-def register(commands):
-    if len(commands) > 0:
-        print('Error: Invalid cli command.')
-        exit(1)
-
-    print('Registering Project...')
+def register():
     lifecycle.start_connection()
     project = lifecycle.register_project()
+    print(f'Finished registering project: {project.id}')
 
-    print(f'Project registered: {project.id}')
+
+def info():
+    # Get container image name
+    # Get project name
+    # Get routine ids
+    pass
 
 
-def start(commands):
-    if len(commands) > 0:
-        print('Error: Invalid cli command.')
-        exit(1)
-
-    print('Setting up connection...')
+def start_worker():
+    print('Starting worker')
     lifecycle.start_connection()
-    print('Registering worker...')
-    worker = lifecycle.register_worker()
-    print(f'Worker running: {worker.id}')
+    worker = lifecycle.register_worker(accepts_work_requests=True)
+    print(f'Registered Worker: {worker.id}')
 
-    print('Starting Engine')
     lifecycle.start_engine()
 
 
-def info(commands):
-    if len(commands) > 0:
-        print('Error: Invalid cli command.')
-        exit(1)
-
-    print(f'Project Name: {_PROJECT_NAME}')
-    print(f'Image Name: {_IMAGE_NAME}')
+def deploy(payload):
+    # TODO: IMPLEMENT ME
+    # Register the project, routines, and container with the service.
+    # Deploy using the deployment params provided.
+    pass
 
 
-def tasks_ls(commands):
-    if len(commands) > 0:
-        print('Error: Invalid cli command.')
-        exit(1)
+def run_local(payload):
+    assert 'arguments' in payload
+    assert 'connect' in payload
+    assert 'routineID' in payload
 
-    for executable in lifecycle.get_task_execs():
-        routine_id = executable.routine_id
-        print(routine_id.routine_name, '\t', routine_id.version)
+    arguments = payload['arguments']
+    connect = payload['connect']
+    routine_id = RoutineID.parse(payload['routineID'])
+    executable = lifecycle.get_exec(routine_id)
+
+    if connect:
+        print('Connecting to service...')
+        lifecycle.start_connection()
+        worker = lifecycle.register_worker(accepts_work_requests=False)
+        print(f'Registered worker: {worker.id}')
+
+    result = lifecycle.start_local_routine(executable, arguments)
+    print('done')
+    # print(result)
 
 
-def workflows_ls(commands):
-    if len(commands) > 0:
-        print('Error: Invalid cli command.')
-        exit(1)
-
-    for executable in lifecycle.get_workflow_execs():
-        routine_id = executable.routine_id
-        print(routine_id.routine_name)
-
-
-def tmp(commands):
-    print('Running simple example')
-
-    # routine_id = 'simple_example.build'
-    # arguments = dict(args=[], kwargs={})
-    # lifecycle.run_routine_TMP(routine_id, arguments)
-
+def run_remote(payload):
+    # Execute the routine remotely.
     lifecycle.start_connection()
     run = lifecycle.start_remote_routine(simple_example.build)
     print('Starting run:', run.id)
 
 
 if __name__ == '__main__':
-    register_workflows([build_bow_classifier, build_glove_classifier])
-
-    parser = argparse.ArgumentParser(description='Project Runner')
-    parser.add_argument('commands', type=str, nargs='+')
+    parser = argparse.ArgumentParser(description="Project")
+    parser.add_argument('command')
+    parser.add_argument('--file')
 
     args = parser.parse_args()
-    commands = args.commands
 
-    if len(commands) == 0:
-        print('error: No commands provided.')
-        exit(1)
+    if args.command == 'start-worker':
+        start_worker()
+        exit(0)
 
-    domain = commands[0]
+    if args.command == 'register':
+        register()
+        exit(0)
 
-    routines = {
-        'tmp': tmp,
-        'info': info,
-        'register': register,
-        'start': start,
-        'tasks ls': tasks_ls,
-        'task ls': tasks_ls,
-        't ls': tasks_ls,
-        'ts ls': tasks_ls,
-        'workflows ls': workflows_ls,
-        'workflow ls': workflows_ls,
-        'wf ls': workflows_ls,
-        'wfs ls': workflows_ls,
-    }
+    if args.command == 'run-local':
+        assert args.file is not None
+        payload_path = os.path.join(os.getcwd(), args.file)
 
-    found_match = False
+        with open(payload_path, 'r') as file:
+            content = file.read()
 
-    for key, func in routines.items():
-        target = key.split()
-        found_match = all(
-            [x == y for x, y in zip(target, commands[:len(target)])])
+        payload = json.loads(content)
+        run_local(payload)
+        exit(0)
 
-        if found_match:
-            func(commands[len(target):])
-            break
-
-    if not found_match:
-        print(f'Error: Unrecognized command: "{domain}"')
-        exit(1)
+    print('Bad command')
+    exit(1)

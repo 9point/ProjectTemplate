@@ -1,0 +1,8 @@
+{
+  "routineID": "wfname:simple_example.build",
+  "arguments": {
+    "args": [],
+    "kwargs": {}
+  },
+  "connect": true
+}
